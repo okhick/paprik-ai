@@ -11,42 +11,42 @@ export class RecipeService {
   /**
    * Get all recipes
    */
-  async getAllRecipes(includeTrash = false): Promise<Recipe[]> {
+  public getAllRecipes(includeTrash = false): Recipe[] {
     return this.repository.getAll(includeTrash);
   }
 
   /**
    * Get recipe by UID
    */
-  async getRecipe(uid: string): Promise<Recipe | undefined> {
+  public getRecipe(uid: string): Recipe | undefined {
     return this.repository.getByUid(uid);
   }
 
   /**
    * Search recipes by name
    */
-  async searchRecipes(query: string, includeTrash = false): Promise<Recipe[]> {
+  public searchRecipes(query: string, includeTrash = false): Recipe[] {
     return this.repository.searchByName(query, includeTrash);
   }
 
   /**
    * Get favorite recipes
    */
-  async getFavorites(): Promise<Recipe[]> {
+  public getFavorites(): Recipe[] {
     return this.repository.getFavorites();
   }
 
   /**
    * Get highly rated recipes
    */
-  async getTopRated(minRating = 4): Promise<Recipe[]> {
+  public getTopRated(minRating = 4): Recipe[] {
     return this.repository.getByRating(minRating);
   }
 
   /**
    * Create a new recipe
    */
-  async createRecipe(recipe: Partial<Recipe>): Promise<Recipe> {
+  public createRecipe(recipe: Partial<Recipe>): Recipe {
     const newRecipe: Recipe = {
       uid: recipe.uid || randomUUID(),
       name: recipe.name || 'Untitled Recipe',
@@ -64,9 +64,9 @@ export class RecipeService {
       source: recipe.source,
       source_url: recipe.source_url,
       image_url: recipe.image_url,
-      in_trash: 0,
-      on_favorites: recipe.on_favorites || 0,
-      on_grocery_list: recipe.on_grocery_list || 0,
+      in_trash: false,
+      on_favorites: recipe.on_favorites || false,
+      on_grocery_list: recipe.on_grocery_list || false,
       created: new Date().toISOString(),
       updated: new Date().toISOString(),
     };
@@ -77,56 +77,63 @@ export class RecipeService {
   /**
    * Update a recipe
    */
-  async updateRecipe(uid: string, updates: Partial<Recipe>): Promise<Recipe | undefined> {
+  public updateRecipe(uid: string, updates: Partial<Recipe>): Recipe | undefined {
     return this.repository.update(uid, updates);
   }
 
   /**
    * Delete a recipe (soft delete)
    */
-  async deleteRecipe(uid: string): Promise<boolean> {
+  public deleteRecipe(uid: string): boolean {
     return this.repository.delete(uid);
+  }
+
+  /**
+   * Hard delete outstanding recipes not in provided list
+   */
+  public hardDeleteOutstandingRecipes(uids: string[]): boolean {
+    return this.repository.hardDeleteOutstanding(uids);
   }
 
   /**
    * Permanently delete a recipe
    */
-  async permanentlyDeleteRecipe(uid: string): Promise<boolean> {
+  public permanentlyDeleteRecipe(uid: string): boolean {
     return this.repository.hardDelete(uid);
   }
 
   /**
    * Restore a trashed recipe
    */
-  async restoreRecipe(uid: string): Promise<boolean> {
+  public restoreRecipe(uid: string): boolean {
     return this.repository.restore(uid);
   }
 
   /**
    * Toggle favorite status
    */
-  async toggleFavorite(uid: string): Promise<boolean> {
+  public toggleFavorite(uid: string): boolean {
     return this.repository.toggleFavorite(uid);
   }
 
   /**
    * Get recipes by category
    */
-  async getRecipesByCategory(categoryUid: string): Promise<Recipe[]> {
+  public getRecipesByCategory(categoryUid: string): Recipe[] {
     return this.repository.getByCategory(categoryUid);
   }
 
   /**
    * Get recipe count
    */
-  async getRecipeCount(includeTrash = false): Promise<number> {
+  public getRecipeCount(includeTrash = false): number {
     return this.repository.count(includeTrash);
   }
 
   /**
    * Parse ingredients from JSON string
    */
-  parseIngredients(ingredientsJson?: string): string[] {
+  public parseIngredients(ingredientsJson?: string): string[] {
     if (!ingredientsJson) {
       return [];
     }
@@ -146,7 +153,7 @@ export class RecipeService {
   /**
    * Parse directions from text
    */
-  parseDirections(directionsText?: string): string[] {
+  public parseDirections(directionsText?: string): string[] {
     if (!directionsText) {
       return [];
     }

@@ -84,7 +84,7 @@ const RecipeListItem: React.FC<RecipeListItemProps> = ({ recipe, isSelected }) =
             {ratingStars}
           </Text>
         )}
-        {recipe.on_favorites === 1 && (
+        {recipe.on_favorites && (
           <Text color="red" dimColor={!isSelected}>
             {' '}
             ❤

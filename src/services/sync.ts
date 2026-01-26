@@ -52,6 +52,9 @@ export class SyncService {
       );
     }
 
+    // Hard delete outstanding recipes not in provided list
+    this.repository.hardDeleteOutstanding(recipeList.map((item) => item.uid));
+
     // Fetch and sync each recipe
     for (const item of recipeList) {
       try {
@@ -80,7 +83,7 @@ export class SyncService {
       }
 
       // Small delay to avoid rate limiting
-      await this.delay(100);
+      await this.delay(200);
     }
 
     return status;

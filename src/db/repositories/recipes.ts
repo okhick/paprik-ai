@@ -13,6 +13,39 @@ export class RecipeRepository {
   }
 
   /**
+   * Convert Recipe to SQLite-compatible data object
+   * Handles boolean to integer conversion and null coalescing
+   */
+  private prepareForSQLite(recipe: Recipe | Partial<Recipe>) {
+    return {
+      uid: recipe.uid,
+      name: recipe.name,
+      ingredients: recipe.ingredients ?? null,
+      directions: recipe.directions ?? null,
+      description: recipe.description ?? null,
+      notes: recipe.notes ?? null,
+      nutritional_info: recipe.nutritional_info ?? null,
+      servings: recipe.servings ?? null,
+      prep_time: recipe.prep_time ?? null,
+      cook_time: recipe.cook_time ?? null,
+      total_time: recipe.total_time ?? null,
+      difficulty: recipe.difficulty ?? null,
+      rating: recipe.rating ?? 0,
+      source: recipe.source ?? null,
+      source_url: recipe.source_url ?? null,
+      image_url: recipe.image_url ?? null,
+      photo: recipe.photo ?? null,
+      in_trash: recipe.in_trash ? 1 : 0,
+      on_favorites: recipe.on_favorites ? 1 : 0,
+      on_grocery_list: recipe.on_grocery_list ? 1 : 0,
+      scale: recipe.scale ?? null,
+      hash: recipe.hash ?? null,
+      photo_hash: recipe.photo_hash ?? null,
+      photo_large: recipe.photo_large ?? null,
+    };
+  }
+
+  /**
    * Get all recipes (excluding trashed)
    */
   getAll(includeTrash = false): Recipe[] {
@@ -82,35 +115,7 @@ export class RecipeRepository {
       )
     `);
 
-    // Ensure all required fields have values
-    const recipeData = {
-      uid: recipe.uid,
-      name: recipe.name,
-      ingredients: recipe.ingredients ?? null,
-      directions: recipe.directions ?? null,
-      description: recipe.description ?? null,
-      notes: recipe.notes ?? null,
-      nutritional_info: recipe.nutritional_info ?? null,
-      servings: recipe.servings ?? null,
-      prep_time: recipe.prep_time ?? null,
-      cook_time: recipe.cook_time ?? null,
-      total_time: recipe.total_time ?? null,
-      difficulty: recipe.difficulty ?? null,
-      rating: recipe.rating ?? 0,
-      source: recipe.source ?? null,
-      source_url: recipe.source_url ?? null,
-      image_url: recipe.image_url ?? null,
-      photo: recipe.photo ?? null,
-      in_trash: recipe.in_trash ? 1 : 0,
-      on_favorites: recipe.on_favorites ? 1 : 0,
-      on_grocery_list: recipe.on_grocery_list ? 1 : 0,
-      scale: recipe.scale ?? null,
-      hash: recipe.hash ?? null,
-      photo_hash: recipe.photo_hash ?? null,
-      photo_large: recipe.photo_large ?? null,
-    };
-
-    stmt.run(recipeData);
+    stmt.run(this.prepareForSQLite(recipe));
     return this.getByUid(recipe.uid)!;
   }
 
@@ -154,7 +159,7 @@ export class RecipeRepository {
       WHERE uid = @uid
     `);
 
-    stmt.run(updated);
+    stmt.run({ ...this.prepareForSQLite(updated), updated: updated.updated });
     return this.getByUid(uid);
   }
 
@@ -165,6 +170,26 @@ export class RecipeRepository {
     const result = this.db
       .prepare('UPDATE recipes SET in_trash = 1, updated = CURRENT_TIMESTAMP WHERE uid = ?')
       .run(uid);
+
+    return result.changes > 0;
+  }
+
+  /**
+   * Delete outstanding recipes not in provided list
+   */
+  hardDeleteOutstanding(uids: string[]): boolean {
+    if (uids.length === 0) {
+      // If no UIDs provided, delete all recipes
+      const result = this.db.prepare('DELETE FROM recipes').run();
+      return result.changes > 0;
+    }
+
+    // Create one placeholder for each UID
+    // Note: SQLite default limit is 32766 parameters (since v3.32.0)
+    const placeholders = uids.map(() => '?').join(',');
+    const result = this.db
+      .prepare(`DELETE FROM recipes WHERE uid NOT IN (${placeholders})`)
+      .run(...uids);
 
     return result.changes > 0;
   }
