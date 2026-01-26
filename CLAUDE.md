@@ -66,15 +66,24 @@ src/
 - Migrations in `db/migrations/` - named with numeric prefixes (e.g., `001_initial.ts`)
 
 **Repository Pattern Example:**
+
 ```typescript
 // src/db/repositories/recipes.ts
 export class RecipeRepository {
   constructor(private db: Database) {}
 
-  findAll(): Recipe[] { /* ... */ }
-  findById(uid: string): Recipe | null { /* ... */ }
-  create(recipe: Recipe): void { /* ... */ }
-  update(uid: string, recipe: Partial<Recipe>): void { /* ... */ }
+  findAll(): Recipe[] {
+    /* ... */
+  }
+  findById(uid: string): Recipe | null {
+    /* ... */
+  }
+  create(recipe: Recipe): void {
+    /* ... */
+  }
+  update(uid: string, recipe: Partial<Recipe>): void {
+    /* ... */
+  }
 }
 ```
 
@@ -93,6 +102,7 @@ export class RecipeRepository {
 - Components are functional with TypeScript
 
 **Example Pattern:**
+
 ```typescript
 import { Box, Text } from 'ink';
 import { useInput } from 'ink';
@@ -125,6 +135,7 @@ export function RecipeList({ recipes }) {
 - Commands coordinate between services and UI components
 
 **Command Structure:**
+
 ```typescript
 import { Command, Flags } from '@oclif/core';
 
@@ -147,12 +158,12 @@ export default class Browse extends Command {
 
 Environment variables (loaded from `.env` file):
 
-| Variable           | Description                   | Required | Default                             |
-| ------------------ | ----------------------------- | -------- | ----------------------------------- |
-| `PAPRIKA_EMAIL`    | Paprika account email         | Yes      | -                                   |
-| `PAPRIKA_PASSWORD` | Paprika account password      | Yes      | -                                   |
-| `DATABASE_PATH`    | Custom database location      | No       | `.data/recipes.db`                  |
-| `PAPRIKA_API_URL`  | Custom API endpoint           | No       | `https://www.paprikaapp.com/api/v1` |
+| Variable           | Description              | Required | Default                             |
+| ------------------ | ------------------------ | -------- | ----------------------------------- |
+| `PAPRIKA_EMAIL`    | Paprika account email    | Yes      | -                                   |
+| `PAPRIKA_PASSWORD` | Paprika account password | Yes      | -                                   |
+| `DATABASE_PATH`    | Custom database location | No       | `.data/recipes.db`                  |
+| `PAPRIKA_API_URL`  | Custom API endpoint      | No       | `https://www.paprikaapp.com/api/v1` |
 
 Configuration is loaded via `src/utils/config.ts` using Zod validation.
 
