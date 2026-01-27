@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, useState, useCallback } from 'react';
+import React, { createContext, useContext, useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import type { AppState, AppActions, FocusPane } from '../../types/tui.js';
 import type { Recipe } from '../../types/recipe.js';
 
@@ -51,13 +51,36 @@ export function AppProvider({ children }: AppProviderProps): React.ReactElement 
   // State management
   const [activePaneId, setActivePaneId] = useState<FocusPane>('list');
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(''); // Immediate input shown in UI
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(''); // Debounced query for filtering
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [showHelp, setShowHelp] = useState(false);
 
-  // Filtered recipes based on search query and favorites filter
+  // Debounce search query (300ms delay)
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    // Clear existing timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Set new timer to update debounced query after 300ms
+    debounceTimerRef.current = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+
+    // Cleanup
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [searchQuery]);
+
+  // Filtered recipes based on debounced search query and favorites filter
   const filteredRecipes = useMemo(() => {
     let filtered = recipes;
 
@@ -67,8 +90,9 @@ export function AppProvider({ children }: AppProviderProps): React.ReactElement 
     }
 
     // Apply search filter (case-insensitive, multi-field)
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
+    // Use debounced query to prevent excessive filtering while typing
+    if (debouncedSearchQuery.trim()) {
+      const query = debouncedSearchQuery.toLowerCase();
       filtered = filtered.filter((recipe) => {
         return (
           recipe.name.toLowerCase().includes(query) ||
@@ -79,7 +103,7 @@ export function AppProvider({ children }: AppProviderProps): React.ReactElement 
     }
 
     return filtered;
-  }, [recipes, searchQuery, showFavorites]);
+  }, [recipes, debouncedSearchQuery, showFavorites]);
 
   // Actions
   const toggleFavoritesFilter = useCallback(() => {

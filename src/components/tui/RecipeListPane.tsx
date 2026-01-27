@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Box, Text } from 'ink';
 import { useAppState, useAppActions } from './AppContext.js';
 import { useScrollable, getVisibleItems } from '../../hooks/useScrollable.js';
+import { SearchBar } from './SearchBar.js';
 import type { Recipe } from '../../types/recipe.js';
 
 /**
@@ -63,30 +64,31 @@ export function RecipeListPane({ height }: RecipeListPaneProps): React.ReactElem
     scroll.viewportHeight
   );
 
-  // Handle empty state
-  if (filteredRecipes.length === 0) {
-    return (
-      <Box flexDirection="column" padding={1}>
-        <Text color="gray">No recipes found</Text>
-        <Text color="gray" dimColor>
-          {state.searchQuery || state.showFavorites
-            ? 'Try adjusting your search or filters'
-            : 'Run "paprik-ai sync" to download recipes from Paprika'}
-        </Text>
-      </Box>
-    );
-  }
-
   // Render recipe list
   return (
     <Box flexDirection="column">
-      {/* Scroll indicator - above */}
-      {scroll.hasMore.above && (
-        <Text dimColor>↑ {scroll.scrollOffset} more above</Text>
-      )}
+      {/* Search bar */}
+      <SearchBar />
 
-      {/* Visible recipes */}
-      {visibleRecipes.map((recipe, idx) => {
+      {/* Handle empty state */}
+      {filteredRecipes.length === 0 ? (
+        <Box flexDirection="column" padding={1}>
+          <Text color="gray">No recipes found</Text>
+          <Text color="gray" dimColor>
+            {state.searchQuery || state.showFavorites
+              ? 'Try adjusting your search or filters (Esc to clear)'
+              : 'Run "paprik-ai sync" to download recipes from Paprika'}
+          </Text>
+        </Box>
+      ) : (
+        <>
+          {/* Scroll indicator - above */}
+          {scroll.hasMore.above && (
+            <Text dimColor>↑ {scroll.scrollOffset} more above</Text>
+          )}
+
+          {/* Visible recipes */}
+          {visibleRecipes.map((recipe, idx) => {
         const absoluteIndex = scroll.scrollOffset + idx;
         const isSelected = absoluteIndex === selectedIndex;
 
@@ -100,19 +102,21 @@ export function RecipeListPane({ height }: RecipeListPaneProps): React.ReactElem
         );
       })}
 
-      {/* Scroll indicator - below */}
-      {scroll.hasMore.below && (
-        <Text dimColor>
-          ↓ {filteredRecipes.length - (scroll.scrollOffset + scroll.viewportHeight)} more below
-        </Text>
-      )}
+          {/* Scroll indicator - below */}
+          {scroll.hasMore.below && (
+            <Text dimColor>
+              ↓ {filteredRecipes.length - (scroll.scrollOffset + scroll.viewportHeight)} more below
+            </Text>
+          )}
 
-      {/* Position indicator */}
-      <Box marginTop={1}>
-        <Text dimColor>
-          Recipe {selectedIndex + 1}/{filteredRecipes.length}
-        </Text>
-      </Box>
+          {/* Position indicator */}
+          <Box marginTop={1}>
+            <Text dimColor>
+              Recipe {selectedIndex + 1}/{filteredRecipes.length}
+            </Text>
+          </Box>
+        </>
+      )}
     </Box>
   );
 }
