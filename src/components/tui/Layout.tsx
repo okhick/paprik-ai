@@ -33,8 +33,11 @@ interface LayoutProps {
  */
 export function Layout({ leftPane, rightPane }: LayoutProps): React.ReactElement {
   const { stdout } = useStdout();
-  const { activePaneId, showHelp } = useAppState();
-  const { setActivePaneId, toggleHelp } = useAppActions();
+  const state = useAppState();
+  const actions = useAppActions();
+
+  const { activePaneId, showHelp, isSearchActive, searchQuery } = state;
+  const { setActivePaneId, toggleHelp, setSearchQuery, setIsSearchActive, toggleFavoritesFilter } = actions;
 
   // Get terminal dimensions
   const terminalWidth = stdout?.columns || MIN_WIDTH;
@@ -51,6 +54,11 @@ export function Layout({ leftPane, rightPane }: LayoutProps): React.ReactElement
   // Global keyboard shortcuts
   useInput(
     (input, key) => {
+      // Quit with Ctrl+C
+      if (key.ctrl && input === 'c') {
+        process.exit(0);
+      }
+
       // Help overlay
       if (input === '?') {
         toggleHelp();
@@ -68,6 +76,53 @@ export function Layout({ leftPane, rightPane }: LayoutProps): React.ReactElement
         return;
       }
 
+      // Search mode active - handle text input
+      if (isSearchActive) {
+        // Escape: deactivate search (keep query)
+        if (key.escape) {
+          setIsSearchActive(false);
+          return;
+        }
+
+        // Backspace: delete last character
+        if (key.backspace || key.delete) {
+          setSearchQuery(searchQuery.slice(0, -1));
+          return;
+        }
+
+        // Regular character input
+        if (input && !key.ctrl && !key.meta) {
+          setSearchQuery(searchQuery + input);
+          return;
+        }
+
+        // Don't process other navigation keys in search mode
+        return;
+      }
+
+      // Quit with 'q' (only when not in search mode)
+      if (input === 'q') {
+        process.exit(0);
+      }
+
+      // Activate search with '/' (when list pane focused)
+      if (input === '/' && activePaneId === 'list') {
+        setIsSearchActive(true);
+        return;
+      }
+
+      // Toggle favorites filter with 'f' (when list pane focused)
+      if (input === 'f' && activePaneId === 'list') {
+        toggleFavoritesFilter();
+        return;
+      }
+
+      // Escape: clear search if there's a query
+      if (key.escape && searchQuery) {
+        setSearchQuery('');
+        return;
+      }
+
       // Tab: cycle focus forward
       if (key.tab && !key.shift) {
         setActivePaneId(activePaneId === 'list' ? 'detail' : 'list');
@@ -80,17 +135,21 @@ export function Layout({ leftPane, rightPane }: LayoutProps): React.ReactElement
         return;
       }
 
-      // Left arrow: focus left pane
-      if (key.leftArrow) {
+      // Left arrow: focus left pane (only when not navigating lists)
+      if (key.leftArrow && activePaneId !== 'list') {
         setActivePaneId('list');
         return;
       }
 
-      // Right arrow: focus right pane
-      if (key.rightArrow) {
+      // Right arrow: focus right pane (only when not navigating lists)
+      if (key.rightArrow && activePaneId !== 'detail') {
         setActivePaneId('detail');
         return;
       }
+
+      // Note: Up/Down, Page Up/Down, Home/End navigation for list and detail panes
+      // will be handled by the RecipeListPane and RecipeDetailPane components themselves
+      // as they need access to scroll state and selection state
     },
     { isActive: true }
   );

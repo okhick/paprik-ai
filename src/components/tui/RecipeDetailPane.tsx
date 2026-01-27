@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { Box, Text } from 'ink';
+import { Box, Text, useInput } from 'ink';
 import { useAppState } from './AppContext.js';
 import { useScrollable, getVisibleLines } from '../../hooks/useScrollable.js';
 import type { Recipe } from '../../types/recipe.js';
@@ -20,7 +20,7 @@ interface RecipeDetailPaneProps {
  */
 export function RecipeDetailPane({ height }: RecipeDetailPaneProps): React.ReactElement {
   const state = useAppState();
-  const { recipes, selectedRecipeId } = state;
+  const { recipes, selectedRecipeId, activePaneId } = state;
 
   // Find the selected recipe
   const selectedRecipe = useMemo(
@@ -49,6 +49,41 @@ export function RecipeDetailPane({ height }: RecipeDetailPaneProps): React.React
   useEffect(() => {
     scroll.actions.resetScroll();
   }, [selectedRecipeId, scroll.actions]);
+
+  // Keyboard navigation for scrolling (only when detail pane is focused)
+  useInput(
+    (_input, key) => {
+      // Only handle scrolling when detail pane is focused
+      if (activePaneId !== 'detail') {
+        return;
+      }
+
+      // Up arrow: scroll up
+      if (key.upArrow) {
+        scroll.actions.scrollUp();
+        return;
+      }
+
+      // Down arrow: scroll down
+      if (key.downArrow) {
+        scroll.actions.scrollDown();
+        return;
+      }
+
+      // Page Down: scroll down by page
+      if (key.pageDown) {
+        scroll.actions.pageDown();
+        return;
+      }
+
+      // Page Up: scroll up by page
+      if (key.pageUp) {
+        scroll.actions.pageUp();
+        return;
+      }
+    },
+    { isActive: activePaneId === 'detail' }
+  );
 
   // Handle no recipe selected
   if (!selectedRecipe) {

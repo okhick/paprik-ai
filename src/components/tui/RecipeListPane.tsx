@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Text } from 'ink';
+import { Box, Text, useInput } from 'ink';
 import { useAppState, useAppActions } from './AppContext.js';
 import { useScrollable, getVisibleItems } from '../../hooks/useScrollable.js';
 import { SearchBar } from './SearchBar.js';
@@ -23,7 +23,7 @@ export function RecipeListPane({ height }: RecipeListPaneProps): React.ReactElem
   const state = useAppState();
   const actions = useAppActions();
 
-  const { filteredRecipes, selectedRecipeId } = state;
+  const { filteredRecipes, selectedRecipeId, activePaneId, isSearchActive } = state;
 
   // Track selected index (position in filtered list)
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -56,6 +56,57 @@ export function RecipeListPane({ height }: RecipeListPaneProps): React.ReactElem
       actions.setSelectedRecipe(null);
     }
   }, [selectedIndex, filteredRecipes, selectedRecipeId, actions]);
+
+  // Keyboard navigation for list (only when list pane is focused and search not active)
+  useInput(
+    (_input, key) => {
+      // Only handle navigation when list pane is focused and search is not active
+      if (activePaneId !== 'list' || isSearchActive) {
+        return;
+      }
+
+      const maxIndex = filteredRecipes.length - 1;
+
+      // Up arrow: move selection up
+      if (key.upArrow) {
+        const newIndex = Math.max(0, selectedIndex - 1);
+        setSelectedIndex(newIndex);
+        // Ensure selection is visible
+        if (newIndex < scroll.scrollOffset) {
+          scroll.actions.scrollUp();
+        }
+        return;
+      }
+
+      // Down arrow: move selection down
+      if (key.downArrow) {
+        const newIndex = Math.min(maxIndex, selectedIndex + 1);
+        setSelectedIndex(newIndex);
+        // Ensure selection is visible
+        if (newIndex >= scroll.scrollOffset + scroll.viewportHeight) {
+          scroll.actions.scrollDown();
+        }
+        return;
+      }
+
+      // Page Down: jump down by page
+      if (key.pageDown) {
+        const newIndex = Math.min(maxIndex, selectedIndex + scroll.viewportHeight);
+        setSelectedIndex(newIndex);
+        scroll.actions.pageDown();
+        return;
+      }
+
+      // Page Up: jump up by page
+      if (key.pageUp) {
+        const newIndex = Math.max(0, selectedIndex - scroll.viewportHeight);
+        setSelectedIndex(newIndex);
+        scroll.actions.pageUp();
+        return;
+      }
+    },
+    { isActive: activePaneId === 'list' && !isSearchActive }
+  );
 
   // Get visible recipes for rendering
   const visibleRecipes = getVisibleItems(
