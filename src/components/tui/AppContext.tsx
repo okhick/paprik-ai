@@ -63,7 +63,7 @@ export function AppProvider({ children }: AppProviderProps): React.ReactElement 
 
     // Apply favorites filter
     if (showFavorites) {
-      filtered = filtered.filter((recipe) => recipe.is_favorite);
+      filtered = filtered.filter((recipe) => recipe.on_favorites);
     }
 
     // Apply search filter (case-insensitive, multi-field)
@@ -73,7 +73,7 @@ export function AppProvider({ children }: AppProviderProps): React.ReactElement 
         return (
           recipe.name.toLowerCase().includes(query) ||
           recipe.ingredients?.toLowerCase().includes(query) ||
-          recipe.categories?.toLowerCase().includes(query)
+          recipe.description?.toLowerCase().includes(query)
         );
       });
     }
