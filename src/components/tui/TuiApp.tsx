@@ -1,10 +1,24 @@
-import React, { useEffect, useMemo } from 'react';
-import { useStdout } from 'ink';
+import React, { useEffect, useState, useMemo } from 'react';
+import { useStdout, Text, Box } from 'ink';
 import { AppProvider, useAppActions } from './AppContext.js';
 import { Layout } from './Layout.js';
 import { RecipeListPane } from './RecipeListPane.js';
 import { RecipeDetailPane } from './RecipeDetailPane.js';
 import { RecipeRepository } from '../../db/repositories/recipes.js';
+
+/**
+ * Simple loading screen component
+ */
+function LoadingScreen() {
+  return (
+    <Box flexDirection="column" alignItems="center" justifyContent="center" padding={2}>
+      <Text color="green" bold>
+        Loading recipes...
+      </Text>
+      <Text>Please wait while we prepare your recipes</Text>
+    </Box>
+  );
+}
 
 /**
  * Inner component that loads recipes from the database
@@ -14,25 +28,54 @@ import { RecipeRepository } from '../../db/repositories/recipes.js';
 function TuiAppInner(): React.ReactElement {
   const actions = useAppActions();
   const { stdout } = useStdout();
+  // Simple loading state
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Load recipes from database on mount
+  // Load recipes on mount with proper error handling
   useEffect(() => {
+    let mounted = true;
+    console.log('Loading recipes from database...');
+
+    // Add fail-safe timer to prevent infinite loading
+    const timer = setTimeout(() => {
+      if (mounted && isLoading) {
+        console.log('Failsafe timer triggered - forcing loading to false');
+        setIsLoading(false);
+      }
+    }, 3000);
+
     try {
-      const recipeRepo = new RecipeRepository();
-      const recipes = recipeRepo.getAll();
-      actions.loadRecipes(recipes);
-    } catch (error) {
-      // If database fails, load empty array
-      // User will see "no recipes" message with sync instructions
-      console.error('Failed to load recipes:', error);
-      actions.loadRecipes([]);
+      // Create recipe repository and get all recipes
+      const repo = new RecipeRepository();
+      const recipes = repo.getAll();
+
+      // Update state if component is still mounted
+      if (mounted) {
+        console.log(`Loaded ${recipes.length} recipes`);
+        actions.loadRecipes(recipes);
+        setIsLoading(false);
+      }
+    } catch (err) {
+      console.error('Error loading recipes:', err);
+      if (mounted) {
+        setError(`Failed to load recipes: ${err instanceof Error ? err.message : String(err)}`);
+        setIsLoading(false);
+      }
     }
-  }, [actions]);
+
+    // Cleanup function
+    return () => {
+      mounted = false;
+      clearTimeout(timer);
+    };
+  }, [actions, isLoading]);
 
   // Calculate available height for pane contents
-  // Terminal height - 3 (top border, title, bottom border) - 1 (search bar) = available height
+  // Pane wrapper subtracts: 2 (borders) + 1 (title) = 3 rows
+  // So the actual available height inside each pane is: terminalHeight - 3
   const terminalHeight = stdout?.rows || 24;
-  const paneContentHeight = Math.max(10, terminalHeight - 4);
+  const paneContentHeight = Math.max(10, terminalHeight - 3);
 
   // Create pane components with correct heights
   const leftPane = useMemo(
@@ -45,7 +88,25 @@ function TuiAppInner(): React.ReactElement {
     [paneContentHeight]
   );
 
-  // Render layout with both panes
+  // Show loading screen if still loading
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
+  // Show error if one occurred
+  if (error) {
+    return (
+      <Box flexDirection="column" padding={1}>
+        <Text color="red" bold>
+          Error loading recipes
+        </Text>
+        <Text>{error}</Text>
+        <Text>Try running the sync command: paprik-ai sync</Text>
+      </Box>
+    );
+  }
+
+  // Render main layout with panes
   return <Layout leftPane={leftPane} rightPane={rightPane} />;
 }
 

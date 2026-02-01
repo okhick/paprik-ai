@@ -28,16 +28,25 @@ export function RecipeListPane({ height }: RecipeListPaneProps): React.ReactElem
   // Track selected index (position in filtered list)
   const [selectedIndex, setSelectedIndex] = useState(0);
 
+  // Account for UI elements that take up space:
+  // - SearchBar: 2-3 rows (depends on filters)
+  // - Scroll indicator above: 1 row (conditional)
+  // - Scroll indicator below: 1 row (conditional)
+  // - Position indicator: 2 rows
+  // Be conservative and reserve ~6 rows for UI chrome
+  const uiChromeHeight = 6;
+  const listViewportHeight = Math.max(5, height - uiChromeHeight);
+
   // Set up scrolling with the filtered recipes
   const scroll = useScrollable({
     totalItems: filteredRecipes.length,
-    initialViewportHeight: height,
+    initialViewportHeight: listViewportHeight,
   });
 
   // Update viewport height when pane height changes
   useEffect(() => {
-    scroll.actions.setViewportHeight(height);
-  }, [height, scroll.actions]);
+    scroll.actions.setViewportHeight(listViewportHeight);
+  }, [listViewportHeight, scroll.actions]);
 
   // Reset selection when filtered recipes change
   useEffect(() => {
@@ -91,17 +100,23 @@ export function RecipeListPane({ height }: RecipeListPaneProps): React.ReactElem
 
       // Page Down: jump down by page
       if (key.pageDown) {
-        const newIndex = Math.min(maxIndex, selectedIndex + scroll.viewportHeight);
+        const newIndex = Math.min(maxIndex, selectedIndex + listViewportHeight);
         setSelectedIndex(newIndex);
-        scroll.actions.pageDown();
+        // Scroll to keep selection visible
+        if (newIndex >= scroll.scrollOffset + listViewportHeight) {
+          scroll.actions.pageDown();
+        }
         return;
       }
 
       // Page Up: jump up by page
       if (key.pageUp) {
-        const newIndex = Math.max(0, selectedIndex - scroll.viewportHeight);
+        const newIndex = Math.max(0, selectedIndex - listViewportHeight);
         setSelectedIndex(newIndex);
-        scroll.actions.pageUp();
+        // Scroll to keep selection visible
+        if (newIndex < scroll.scrollOffset) {
+          scroll.actions.pageUp();
+        }
         return;
       }
     },
@@ -109,11 +124,7 @@ export function RecipeListPane({ height }: RecipeListPaneProps): React.ReactElem
   );
 
   // Get visible recipes for rendering
-  const visibleRecipes = getVisibleItems(
-    filteredRecipes,
-    scroll.scrollOffset,
-    scroll.viewportHeight
-  );
+  const visibleRecipes = getVisibleItems(filteredRecipes, scroll.scrollOffset, listViewportHeight);
 
   // Render recipe list
   return (
@@ -134,29 +145,27 @@ export function RecipeListPane({ height }: RecipeListPaneProps): React.ReactElem
       ) : (
         <>
           {/* Scroll indicator - above */}
-          {scroll.hasMore.above && (
-            <Text dimColor>↑ {scroll.scrollOffset} more above</Text>
-          )}
+          {scroll.hasMore.above && <Text dimColor>↑ {scroll.scrollOffset} more above</Text>}
 
           {/* Visible recipes */}
           {visibleRecipes.map((recipe, idx) => {
-        const absoluteIndex = scroll.scrollOffset + idx;
-        const isSelected = absoluteIndex === selectedIndex;
+            const absoluteIndex = scroll.scrollOffset + idx;
+            const isSelected = absoluteIndex === selectedIndex;
 
-        return (
-          <RecipeListItem
-            key={recipe.uid}
-            recipe={recipe}
-            isSelected={isSelected}
-            index={absoluteIndex}
-          />
-        );
-      })}
+            return (
+              <RecipeListItem
+                key={recipe.uid}
+                recipe={recipe}
+                isSelected={isSelected}
+                index={absoluteIndex}
+              />
+            );
+          })}
 
           {/* Scroll indicator - below */}
           {scroll.hasMore.below && (
             <Text dimColor>
-              ↓ {filteredRecipes.length - (scroll.scrollOffset + scroll.viewportHeight)} more below
+              ↓ {filteredRecipes.length - (scroll.scrollOffset + listViewportHeight)} more below
             </Text>
           )}
 
@@ -183,10 +192,13 @@ interface RecipeListItemProps {
 
 function RecipeListItem({ recipe, isSelected }: RecipeListItemProps): React.ReactElement {
   // Favorite indicator
-  const favoriteIcon = recipe.on_favorites ? '★ ' : '';
+  const favoriteIcon = recipe.on_favorites ? '⭐ ' : '';
 
   // Rating display (if exists)
-  const ratingText = recipe.rating ? ` (${recipe.rating}★)` : '';
+  const ratingText = recipe.rating ? ` • ${recipe.rating}★` : '';
+
+  // Category info (not currently available in the Recipe type)
+  const categoryText = '';
 
   // Truncate name if too long (approximate width limit)
   const maxNameLength = 40; // Adjust based on pane width
@@ -195,11 +207,25 @@ function RecipeListItem({ recipe, isSelected }: RecipeListItemProps): React.Reac
       ? recipe.name.slice(0, maxNameLength - 1) + '…'
       : recipe.name;
 
+  // Use different styling based on selection state
+  const textColor = isSelected ? 'white' : undefined;
+  const favoriteColor = recipe.on_favorites ? 'yellow' : textColor;
+
   return (
-    <Box>
-      <Text inverse={isSelected} color={isSelected ? 'cyan' : undefined}>
-        {favoriteIcon}{displayName}{ratingText}
-      </Text>
+    <Box paddingLeft={1}>
+      {/* Render with selection highlighting */}
+      <Box width="100%">
+        <Text color={favoriteColor} inverse={isSelected}>
+          {favoriteIcon}
+        </Text>
+        <Text bold color={textColor} inverse={isSelected}>
+          {displayName}
+        </Text>
+        <Text color="gray" inverse={isSelected}>
+          {ratingText}
+          {categoryText}
+        </Text>
+      </Box>
     </Box>
   );
 }
