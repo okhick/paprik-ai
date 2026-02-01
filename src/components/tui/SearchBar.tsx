@@ -46,9 +46,7 @@ export function SearchBar(): React.ReactElement {
             </Box>
           )}
           <Text dimColor>
-            {hasFilters
-              ? `${resultCount} of ${totalCount} recipes`
-              : `${totalCount} recipes`}
+            {hasFilters ? `${resultCount} of ${totalCount} recipes` : `${totalCount} recipes`}
           </Text>
         </Box>
       )}

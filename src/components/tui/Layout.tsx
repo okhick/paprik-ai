@@ -37,7 +37,8 @@ export function Layout({ leftPane, rightPane }: LayoutProps): React.ReactElement
   const actions = useAppActions();
 
   const { activePaneId, showHelp, isSearchActive, searchQuery } = state;
-  const { setActivePaneId, toggleHelp, setSearchQuery, setIsSearchActive, toggleFavoritesFilter } = actions;
+  const { setActivePaneId, toggleHelp, setSearchQuery, setIsSearchActive, toggleFavoritesFilter } =
+    actions;
 
   // Get terminal dimensions
   const terminalWidth = stdout?.columns || MIN_WIDTH;
@@ -49,7 +50,10 @@ export function Layout({ leftPane, rightPane }: LayoutProps): React.ReactElement
   // Calculate pane dimensions (40/60 split)
   const leftPaneWidth = Math.floor(terminalWidth * 0.4);
   const rightPaneWidth = terminalWidth - leftPaneWidth;
-  const paneHeight = terminalHeight;
+
+  // Reserve 1 row for status bar at the bottom
+  const statusBarHeight = 1;
+  const paneHeight = terminalHeight - statusBarHeight;
 
   // Global keyboard shortcuts
   useInput(
@@ -227,26 +231,68 @@ export function Layout({ leftPane, rightPane }: LayoutProps): React.ReactElement
 
   // Render two-pane layout
   return (
-    <Box width={terminalWidth} height={terminalHeight}>
-      {/* Left pane (Recipe List) */}
-      <Pane
-        title="Recipes"
-        isFocused={activePaneId === 'list'}
-        width={leftPaneWidth}
-        height={paneHeight}
-      >
-        {leftPane}
-      </Pane>
+    <Box width={terminalWidth} height={terminalHeight} flexDirection="column">
+      <Box width={terminalWidth} height={paneHeight}>
+        {/* Left pane (Recipe List) */}
+        <Pane
+          title="Recipes"
+          isFocused={activePaneId === 'list'}
+          width={leftPaneWidth}
+          height={paneHeight}
+        >
+          {leftPane}
+        </Pane>
 
-      {/* Right pane (Recipe Detail) */}
-      <Pane
-        title="Details"
-        isFocused={activePaneId === 'detail'}
-        width={rightPaneWidth}
-        height={paneHeight}
-      >
-        {rightPane}
-      </Pane>
+        {/* Right pane (Recipe Detail) */}
+        <Pane
+          title="Details"
+          isFocused={activePaneId === 'detail'}
+          width={rightPaneWidth}
+          height={paneHeight}
+        >
+          {rightPane}
+        </Pane>
+      </Box>
+
+      {/* Status bar */}
+      <Box width={terminalWidth} height={statusBarHeight} borderStyle="round" borderColor="blue">
+        <Box paddingLeft={1} paddingRight={1} flexGrow={1} alignItems="center">
+          <Text color="white">
+            <Text color="white" bold>
+              ?
+            </Text>{' '}
+            Help |
+            <Text color="white" bold>
+              {' '}
+              q
+            </Text>{' '}
+            Quit |
+            <Text color="white" bold>
+              {' '}
+              ⇥
+            </Text>{' '}
+            Switch pane |
+            <Text color="white" bold>
+              {' '}
+              f
+            </Text>{' '}
+            Filter favorites |
+            <Text color="white" bold>
+              {' '}
+              /
+            </Text>{' '}
+            Search |
+            <Text color="white" bold>
+              {' '}
+              ↑/↓
+            </Text>{' '}
+            Navigate
+          </Text>
+        </Box>
+        <Box paddingRight={1} alignItems="center">
+          <Text color="white">paprik-ai v1.0</Text>
+        </Box>
+      </Box>
     </Box>
   );
 }

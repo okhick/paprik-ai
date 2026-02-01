@@ -33,6 +33,11 @@ export default class Browse extends Command {
     const { flags } = await this.parse(Browse);
     const config = getConfig();
 
+    // Show deprecation warning
+    this.log('\n⚠️  Deprecation Notice ⚠️');
+    this.log('The "browse" command is being phased out in favor of the new TUI interface.');
+    this.log('Try running "paprik-ai" with no arguments for a better experience.\n');
+
     // Initialize database
     const db = getDatabase(config.databasePath);
     const repository = new RecipeRepository(db);

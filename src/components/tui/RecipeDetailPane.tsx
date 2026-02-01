@@ -34,16 +34,21 @@ export function RecipeDetailPane({ height }: RecipeDetailPaneProps): React.React
     return formatRecipeContent(selectedRecipe);
   }, [selectedRecipe]);
 
+  // Account for scroll indicators (1 row each when present, max 2 rows total)
+  // Be conservative and reserve 2 rows for UI chrome
+  const uiChromeHeight = 2;
+  const detailViewportHeight = Math.max(5, height - uiChromeHeight);
+
   // Set up scrolling
   const scroll = useScrollable({
     totalItems: contentLines.length,
-    initialViewportHeight: height,
+    initialViewportHeight: detailViewportHeight,
   });
 
   // Update viewport height when pane height changes
   useEffect(() => {
-    scroll.actions.setViewportHeight(height);
-  }, [height, scroll.actions]);
+    scroll.actions.setViewportHeight(detailViewportHeight);
+  }, [detailViewportHeight, scroll.actions]);
 
   // Reset scroll position when selected recipe changes
   useEffect(() => {
@@ -130,29 +135,29 @@ function formatRecipeContent(recipe: Recipe): string[] {
 
   // Recipe name as title
   lines.push('');
-  lines.push(recipe.name);
-  lines.push('='.repeat(Math.min(recipe.name.length, maxWidth)));
+  lines.push(`🍽️ ${recipe.name}`);
+  lines.push('━'.repeat(Math.min(recipe.name.length + 4, maxWidth)));
   lines.push('');
 
   // Metadata section
   const metadata: string[] = [];
   if (recipe.rating) {
-    metadata.push(`Rating: ${'★'.repeat(recipe.rating)}${'☆'.repeat(5 - recipe.rating)}`);
+    metadata.push(`Rating: ${'★'.repeat(recipe.rating)}${'·'.repeat(5 - recipe.rating)}`);
   }
   if (recipe.prep_time) {
-    metadata.push(`Prep: ${recipe.prep_time}`);
+    metadata.push(`⏱️ Prep: ${recipe.prep_time}`);
   }
   if (recipe.cook_time) {
-    metadata.push(`Cook: ${recipe.cook_time}`);
+    metadata.push(`🔥 Cook: ${recipe.cook_time}`);
   }
   if (recipe.total_time) {
-    metadata.push(`Total: ${recipe.total_time}`);
+    metadata.push(`⌛ Total: ${recipe.total_time}`);
   }
   if (recipe.servings) {
-    metadata.push(`Servings: ${recipe.servings}`);
+    metadata.push(`👥 Servings: ${recipe.servings}`);
   }
   if (recipe.difficulty) {
-    metadata.push(`Difficulty: ${recipe.difficulty}`);
+    metadata.push(`📊 Difficulty: ${recipe.difficulty}`);
   }
 
   if (metadata.length > 0) {
@@ -162,16 +167,16 @@ function formatRecipeContent(recipe: Recipe): string[] {
 
   // Description section
   if (recipe.description?.trim()) {
-    lines.push('Description');
-    lines.push('-'.repeat(11));
+    lines.push('📝 Description');
+    lines.push('─'.repeat(13));
     lines.push(...wrapText(recipe.description, maxWidth));
     lines.push('');
   }
 
   // Ingredients section
   if (recipe.ingredients?.trim()) {
-    lines.push('Ingredients');
-    lines.push('-'.repeat(11));
+    lines.push('🧾 Ingredients');
+    lines.push('─'.repeat(14));
     // Parse ingredients (may be JSON or plain text)
     const ingredientLines = parseIngredients(recipe.ingredients);
     lines.push(...ingredientLines.flatMap((ing) => wrapText(ing, maxWidth)));
@@ -180,24 +185,24 @@ function formatRecipeContent(recipe: Recipe): string[] {
 
   // Directions section
   if (recipe.directions?.trim()) {
-    lines.push('Directions');
-    lines.push('-'.repeat(10));
+    lines.push('👨‍🍳 Directions');
+    lines.push('─'.repeat(14));
     lines.push(...wrapText(recipe.directions, maxWidth));
     lines.push('');
   }
 
   // Notes section
   if (recipe.notes?.trim()) {
-    lines.push('Notes');
-    lines.push('-'.repeat(5));
+    lines.push('📌 Notes');
+    lines.push('─'.repeat(8));
     lines.push(...wrapText(recipe.notes, maxWidth));
     lines.push('');
   }
 
   // Source section
   if (recipe.source || recipe.source_url) {
-    lines.push('Source');
-    lines.push('-'.repeat(6));
+    lines.push('🔗 Source');
+    lines.push('─'.repeat(10));
     if (recipe.source) {
       lines.push(recipe.source);
     }
@@ -209,8 +214,8 @@ function formatRecipeContent(recipe: Recipe): string[] {
 
   // Nutritional info section
   if (recipe.nutritional_info?.trim()) {
-    lines.push('Nutritional Information');
-    lines.push('-'.repeat(23));
+    lines.push('🥦 Nutritional Information');
+    lines.push('─'.repeat(27));
     lines.push(...wrapText(recipe.nutritional_info, maxWidth));
     lines.push('');
   }

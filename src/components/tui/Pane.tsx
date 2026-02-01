@@ -24,8 +24,11 @@ interface PaneProps {
  * Shows dimmed border when unfocused, highlighted border when focused.
  */
 export function Pane({ children, isFocused, title, width, height }: PaneProps): React.ReactElement {
+  // Enhanced styling for better visibility
   const borderColor = isFocused ? 'cyan' : 'gray';
-  const borderStyle = isFocused ? 'bold' : 'round';
+  const borderStyle = 'round'; // Consistent border style for cleaner look
+  const titleColor = isFocused ? 'cyan' : 'white';
+  const titleBold = isFocused;
 
   // Calculate content dimensions (excluding border)
   const contentWidth = Math.max(0, width - 2); // 2 for left/right border
@@ -43,8 +46,12 @@ export function Pane({ children, isFocused, title, width, height }: PaneProps): 
     >
       {title && (
         <Box>
-          <Text bold color={borderColor}>
-            {title}
+          <Text
+            bold={titleBold}
+            color={titleColor}
+            backgroundColor={isFocused ? 'blue' : undefined}
+          >
+            {isFocused ? ` ${title} ` : title}
           </Text>
         </Box>
       )}

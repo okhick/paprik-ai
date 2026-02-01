@@ -1,6 +1,21 @@
-import React, { createContext, useContext, useMemo, useState, useCallback, useEffect, useRef } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useMemo,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+} from 'react';
 import type { AppState, AppActions, FocusPane } from '../../types/tui.js';
 import type { Recipe } from '../../types/recipe.js';
+
+/**
+ * Recipe with precomputed search fields for optimized filtering
+ */
+interface IndexedRecipe extends Recipe {
+  _searchText?: string;
+}
 
 /**
  * Context value combining state and actions
@@ -55,12 +70,13 @@ export function AppProvider({ children }: AppProviderProps): React.ReactElement 
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(''); // Debounced query for filtering
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [recipes, setRecipes] = useState<IndexedRecipe[]>([]);
   const [showHelp, setShowHelp] = useState(false);
 
   // Debounce search query (300ms delay)
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Create indexed recipes for faster filtering
   useEffect(() => {
     // Clear existing timer
     if (debounceTimerRef.current) {
@@ -93,13 +109,9 @@ export function AppProvider({ children }: AppProviderProps): React.ReactElement 
     // Use debounced query to prevent excessive filtering while typing
     if (debouncedSearchQuery.trim()) {
       const query = debouncedSearchQuery.toLowerCase();
-      filtered = filtered.filter((recipe) => {
-        return (
-          recipe.name.toLowerCase().includes(query) ||
-          recipe.ingredients?.toLowerCase().includes(query) ||
-          recipe.description?.toLowerCase().includes(query)
-        );
-      });
+
+      // Use precomputed search text for faster filtering
+      filtered = filtered.filter((recipe) => recipe._searchText?.includes(query));
     }
 
     return filtered;
@@ -115,7 +127,24 @@ export function AppProvider({ children }: AppProviderProps): React.ReactElement 
   }, []);
 
   const loadRecipes = useCallback((newRecipes: Recipe[]) => {
-    setRecipes(newRecipes);
+    // Index recipes as they're loaded
+    const indexedRecipes = newRecipes.map((recipe) => {
+      const indexed = recipe as IndexedRecipe;
+
+      // Create a normalized search text combining key fields
+      const searchFields = [
+        recipe.name || '',
+        recipe.ingredients || '',
+        recipe.description || '',
+        recipe.directions || '',
+        recipe.notes || '',
+      ];
+
+      indexed._searchText = searchFields.join(' ').toLowerCase();
+      return indexed;
+    });
+
+    setRecipes(indexedRecipes);
   }, []);
 
   // Combine state
