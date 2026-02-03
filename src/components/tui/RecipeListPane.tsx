@@ -191,15 +191,6 @@ interface RecipeListItemProps {
 }
 
 function RecipeListItem({ recipe, isSelected }: RecipeListItemProps): React.ReactElement {
-  // Favorite indicator
-  const favoriteIcon = recipe.on_favorites ? '⭐ ' : '';
-
-  // Rating display (if exists)
-  const ratingText = recipe.rating ? ` • ${recipe.rating}★` : '';
-
-  // Category info (not currently available in the Recipe type)
-  const categoryText = '';
-
   // Truncate name if too long (approximate width limit)
   const maxNameLength = 40; // Adjust based on pane width
   const displayName =
@@ -209,21 +200,13 @@ function RecipeListItem({ recipe, isSelected }: RecipeListItemProps): React.Reac
 
   // Use different styling based on selection state
   const textColor = isSelected ? 'white' : undefined;
-  const favoriteColor = recipe.on_favorites ? 'yellow' : textColor;
 
   return (
     <Box paddingLeft={1}>
       {/* Render with selection highlighting */}
       <Box width="100%">
-        <Text color={favoriteColor} inverse={isSelected}>
-          {favoriteIcon}
-        </Text>
         <Text bold color={textColor} inverse={isSelected}>
           {displayName}
-        </Text>
-        <Text color="gray" inverse={isSelected}>
-          {ratingText}
-          {categoryText}
         </Text>
       </Box>
     </Box>

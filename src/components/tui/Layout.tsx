@@ -52,7 +52,7 @@ export function Layout({ leftPane, rightPane }: LayoutProps): React.ReactElement
   const rightPaneWidth = terminalWidth - leftPaneWidth;
 
   // Reserve 1 row for status bar at the bottom
-  const statusBarHeight = 1;
+  const statusBarHeight = 2;
   const paneHeight = terminalHeight - statusBarHeight;
 
   // Global keyboard shortcuts
@@ -234,22 +234,12 @@ export function Layout({ leftPane, rightPane }: LayoutProps): React.ReactElement
     <Box width={terminalWidth} height={terminalHeight} flexDirection="column">
       <Box width={terminalWidth} height={paneHeight}>
         {/* Left pane (Recipe List) */}
-        <Pane
-          title="Recipes"
-          isFocused={activePaneId === 'list'}
-          width={leftPaneWidth}
-          height={paneHeight}
-        >
+        <Pane isFocused={activePaneId === 'list'} width={leftPaneWidth} height={paneHeight}>
           {leftPane}
         </Pane>
 
         {/* Right pane (Recipe Detail) */}
-        <Pane
-          title="Details"
-          isFocused={activePaneId === 'detail'}
-          width={rightPaneWidth}
-          height={paneHeight}
-        >
+        <Pane isFocused={activePaneId === 'detail'} width={rightPaneWidth} height={paneHeight}>
           {rightPane}
         </Pane>
       </Box>

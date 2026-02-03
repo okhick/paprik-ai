@@ -27,7 +27,7 @@ export function Pane({ children, isFocused, title, width, height }: PaneProps): 
   // Enhanced styling for better visibility
   const borderColor = isFocused ? 'cyan' : 'gray';
   const borderStyle = 'round'; // Consistent border style for cleaner look
-  const titleColor = isFocused ? 'cyan' : 'white';
+  // const titleColor = isFocused ? 'cyan' : 'white';
   const titleBold = isFocused;
 
   // Calculate content dimensions (excluding border)
@@ -46,13 +46,7 @@ export function Pane({ children, isFocused, title, width, height }: PaneProps): 
     >
       {title && (
         <Box>
-          <Text
-            bold={titleBold}
-            color={titleColor}
-            backgroundColor={isFocused ? 'blue' : undefined}
-          >
-            {isFocused ? ` ${title} ` : title}
-          </Text>
+          <Text bold={titleBold}>{isFocused ? ` ${title} ` : title}</Text>
         </Box>
       )}
       <Box flexDirection="column" width={contentWidth} height={innerHeight}>

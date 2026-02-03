@@ -135,29 +135,29 @@ function formatRecipeContent(recipe: Recipe): string[] {
 
   // Recipe name as title
   lines.push('');
-  lines.push(`🍽️ ${recipe.name}`);
+  lines.push(`${recipe.name}`);
   lines.push('━'.repeat(Math.min(recipe.name.length + 4, maxWidth)));
   lines.push('');
 
-  // Metadata section
+  // Metadata section (using shorter labels to avoid wrapping)
   const metadata: string[] = [];
   if (recipe.rating) {
     metadata.push(`Rating: ${'★'.repeat(recipe.rating)}${'·'.repeat(5 - recipe.rating)}`);
   }
   if (recipe.prep_time) {
-    metadata.push(`⏱️ Prep: ${recipe.prep_time}`);
+    metadata.push(`Prep: ${recipe.prep_time}`);
   }
   if (recipe.cook_time) {
-    metadata.push(`🔥 Cook: ${recipe.cook_time}`);
+    metadata.push(`Cook: ${recipe.cook_time}`);
   }
   if (recipe.total_time) {
-    metadata.push(`⌛ Total: ${recipe.total_time}`);
+    metadata.push(`Total: ${recipe.total_time}`);
   }
   if (recipe.servings) {
-    metadata.push(`👥 Servings: ${recipe.servings}`);
+    metadata.push(`Servings: ${recipe.servings}`);
   }
   if (recipe.difficulty) {
-    metadata.push(`📊 Difficulty: ${recipe.difficulty}`);
+    metadata.push(`Difficulty: ${recipe.difficulty}`);
   }
 
   if (metadata.length > 0) {
@@ -167,7 +167,7 @@ function formatRecipeContent(recipe: Recipe): string[] {
 
   // Description section
   if (recipe.description?.trim()) {
-    lines.push('📝 Description');
+    lines.push('Description');
     lines.push('─'.repeat(13));
     lines.push(...wrapText(recipe.description, maxWidth));
     lines.push('');
@@ -175,7 +175,7 @@ function formatRecipeContent(recipe: Recipe): string[] {
 
   // Ingredients section
   if (recipe.ingredients?.trim()) {
-    lines.push('🧾 Ingredients');
+    lines.push('Ingredients');
     lines.push('─'.repeat(14));
     // Parse ingredients (may be JSON or plain text)
     const ingredientLines = parseIngredients(recipe.ingredients);
@@ -185,7 +185,7 @@ function formatRecipeContent(recipe: Recipe): string[] {
 
   // Directions section
   if (recipe.directions?.trim()) {
-    lines.push('👨‍🍳 Directions');
+    lines.push('Directions');
     lines.push('─'.repeat(14));
     lines.push(...wrapText(recipe.directions, maxWidth));
     lines.push('');
@@ -227,28 +227,6 @@ function formatRecipeContent(recipe: Recipe): string[] {
  * Parse ingredients from JSON string or plain text
  */
 function parseIngredients(ingredientsStr: string): string[] {
-  try {
-    // Try parsing as JSON (Paprika format)
-    const parsed = JSON.parse(ingredientsStr);
-    if (Array.isArray(parsed)) {
-      return parsed.map((ing) => {
-        if (typeof ing === 'string') {
-          return `• ${ing}`;
-        }
-        // Handle structured ingredient objects
-        if (ing.name) {
-          const quantity = ing.quantity || '';
-          const unit = ing.unit || '';
-          return `• ${quantity} ${unit} ${ing.name}`.trim();
-        }
-        return `• ${String(ing)}`;
-      });
-    }
-  } catch {
-    // Not JSON, treat as plain text
-  }
-
-  // Split by newlines for plain text
   return ingredientsStr
     .split('\n')
     .filter((line) => line.trim())
