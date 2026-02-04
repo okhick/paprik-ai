@@ -161,72 +161,11 @@ export function Layout({ leftPane, rightPane }: LayoutProps): React.ReactElement
   // Handle terminal resize: terminal dimensions automatically update via useStdout
   // No additional handling needed - React will re-render with new dimensions
 
-  // Display warning if terminal is too small
   if (isTooSmall) {
-    return (
-      <Box flexDirection="column" padding={1}>
-        <Text color="red" bold>
-          Terminal too small!
-        </Text>
-        <Text>
-          Minimum size: {MIN_WIDTH}x{MIN_HEIGHT}
-        </Text>
-        <Text>
-          Current size: {terminalWidth}x{terminalHeight}
-        </Text>
-        <Text dimColor>Please resize your terminal and try again.</Text>
-      </Box>
-    );
+    return <TooSmallBox width={terminalHeight} height={terminalWidth} />;
   }
-
-  // Show help overlay if active
   if (showHelp) {
-    return (
-      <Box
-        flexDirection="column"
-        width={terminalWidth}
-        height={terminalHeight}
-        borderStyle="round"
-        borderColor="cyan"
-        padding={1}
-      >
-        <Text bold underline>
-          Keyboard Shortcuts
-        </Text>
-        <Box marginTop={1} flexDirection="column">
-          <Text bold color="cyan">
-            Global
-          </Text>
-          <Text> ? - Toggle this help</Text>
-          <Text> q - Quit application</Text>
-          <Text> Ctrl+C - Exit</Text>
-          <Text> Tab - Focus next pane</Text>
-          <Text> Shift+Tab - Focus previous pane</Text>
-          <Text> Left/Right - Focus left/right pane</Text>
-        </Box>
-        <Box marginTop={1} flexDirection="column">
-          <Text bold color="cyan">
-            Recipe List
-          </Text>
-          <Text> Up/Down - Navigate recipes</Text>
-          <Text> Page Up/Down - Page through list</Text>
-          <Text> Home/End - Jump to first/last recipe</Text>
-          <Text> / - Activate search</Text>
-          <Text> f - Toggle favorites filter</Text>
-        </Box>
-        <Box marginTop={1} flexDirection="column">
-          <Text bold color="cyan">
-            Recipe Detail
-          </Text>
-          <Text> Up/Down - Scroll content</Text>
-          <Text> Page Up/Down - Page through content</Text>
-          <Text> Home/End - Jump to top/bottom</Text>
-        </Box>
-        <Box marginTop={1}>
-          <Text dimColor>Press ? or Esc to close</Text>
-        </Box>
-      </Box>
-    );
+    return <HelpBox width={terminalWidth} height={terminalHeight} />;
   }
 
   // Render two-pane layout
@@ -283,6 +222,72 @@ export function Layout({ leftPane, rightPane }: LayoutProps): React.ReactElement
           <Text color="white">paprik-ai v1.0</Text>
         </Box>
       </Box>
+    </Box>
+  );
+}
+
+function HelpBox({ width, height }: { width: number; height: number }) {
+  return (
+    <Box
+      flexDirection="column"
+      width={width}
+      height={height}
+      borderStyle="round"
+      borderColor="cyan"
+      padding={1}
+    >
+      <Text bold underline>
+        Keyboard Shortcuts
+      </Text>
+      <Box marginTop={1} flexDirection="column">
+        <Text bold color="cyan">
+          Global
+        </Text>
+        <Text> ? - Toggle this help</Text>
+        <Text> q - Quit application</Text>
+        <Text> Ctrl+C - Exit</Text>
+        <Text> Tab - Focus next pane</Text>
+        <Text> Shift+Tab - Focus previous pane</Text>
+        <Text> Left/Right - Focus left/right pane</Text>
+      </Box>
+      <Box marginTop={1} flexDirection="column">
+        <Text bold color="cyan">
+          Recipe List
+        </Text>
+        <Text> Up/Down - Navigate recipes</Text>
+        <Text> Page Up/Down - Page through list</Text>
+        <Text> Home/End - Jump to first/last recipe</Text>
+        <Text> / - Activate search</Text>
+        <Text> f - Toggle favorites filter</Text>
+      </Box>
+      <Box marginTop={1} flexDirection="column">
+        <Text bold color="cyan">
+          Recipe Detail
+        </Text>
+        <Text> Up/Down - Scroll content</Text>
+        <Text> Page Up/Down - Page through content</Text>
+        <Text> Home/End - Jump to top/bottom</Text>
+      </Box>
+      <Box marginTop={1}>
+        <Text dimColor>Press ? or Esc to close</Text>
+      </Box>
+    </Box>
+  );
+}
+
+function TooSmallBox({ width, height }: { width: number; height: number }) {
+  return (
+    <Box flexDirection="column" padding={1}>
+      <Text color="red" bold>
+        Terminal too small!
+      </Text>
+      <Text>
+        Minimum size: {MIN_WIDTH}x{MIN_HEIGHT}
+      </Text>
+      <Text>
+        Current size: {width}x{height}
+      </Text>
+      <Text dimColor>Please resize your terminal and try again.</Text>
     </Box>
   );
 }
