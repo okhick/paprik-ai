@@ -1,16 +1,9 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { useAppState } from './AppContext.js';
-import { useScrollable, getVisibleLines } from '../../hooks/useScrollable.js';
-import type { Recipe } from '../../types/recipe.js';
 
-/**
- * Props for RecipeDetailPane component
- */
-interface RecipeDetailPaneProps {
-  /** Available height for the detail content */
-  height: number;
-}
+import type { Recipe } from '../../types/recipe.js';
+import { ScrollView, ScrollViewRef } from 'ink-scroll-view';
 
 /**
  * Recipe detail pane component
@@ -18,7 +11,7 @@ interface RecipeDetailPaneProps {
  * Displays the full details of the selected recipe with scrolling support.
  * Formats content into readable sections and handles missing fields gracefully.
  */
-export function RecipeDetailPane({ height }: RecipeDetailPaneProps): React.ReactElement {
+export function RecipeDetailPane(): React.ReactElement {
   const state = useAppState();
   const { recipes, selectedRecipeId, activePaneId } = state;
 
@@ -34,61 +27,38 @@ export function RecipeDetailPane({ height }: RecipeDetailPaneProps): React.React
     return formatRecipeContent(selectedRecipe);
   }, [selectedRecipe]);
 
-  // Account for scroll indicators (1 row each when present, max 2 rows total)
-  // Be conservative and reserve 2 rows for UI chrome
-  const uiChromeHeight = 2;
-  const detailViewportHeight = Math.max(5, height - uiChromeHeight);
-
-  // Set up scrolling
-  const scroll = useScrollable({
-    totalItems: contentLines.length,
-    initialViewportHeight: detailViewportHeight,
-  });
-
-  // Update viewport height when pane height changes
-  useEffect(() => {
-    scroll.actions.setViewportHeight(detailViewportHeight);
-  }, [detailViewportHeight, scroll.actions]);
+  const scrollRef = useRef<ScrollViewRef>(null);
 
   // Reset scroll position when selected recipe changes
   useEffect(() => {
-    scroll.actions.resetScroll();
-  }, [selectedRecipeId, scroll.actions]);
+    scrollRef.current?.scrollToTop();
+  }, [selectedRecipeId, scrollRef.current]);
 
   // Keyboard navigation for scrolling (only when detail pane is focused)
   useInput(
     (_input, key) => {
-      // Only handle scrolling when detail pane is focused
-      if (activePaneId !== 'detail') {
-        return;
-      }
-
       // Up arrow: scroll up
       if (key.upArrow) {
-        scroll.actions.scrollUp();
-        return;
+        scrollRef.current?.scrollBy(-1); // Scroll up 1 line
       }
-
-      // Down arrow: scroll down
       if (key.downArrow) {
-        scroll.actions.scrollDown();
-        return;
-      }
-
-      // Page Down: scroll down by page
-      if (key.pageDown) {
-        scroll.actions.pageDown();
-        return;
-      }
-
-      // Page Up: scroll up by page
-      if (key.pageUp) {
-        scroll.actions.pageUp();
-        return;
+        scrollRef.current?.scrollBy(1); // Scroll down 1 line
       }
     },
     { isActive: activePaneId === 'detail' }
   );
+
+  const renderLine = (line: string, idx: number) => {
+    if (line === '' && idx > 0) {
+      return <Text key={idx}> </Text>;
+    }
+
+    return <Text key={idx}>{line}</Text>;
+  };
+
+  const renderedLines = useMemo(() => {
+    return contentLines.map((line, idx) => renderLine(line, idx));
+  }, [contentLines]);
 
   // Handle no recipe selected
   if (!selectedRecipe) {
@@ -104,22 +74,10 @@ export function RecipeDetailPane({ height }: RecipeDetailPaneProps): React.React
     );
   }
 
-  // Get visible lines for rendering
-  const visibleLines = getVisibleLines(contentLines, scroll.scrollOffset, scroll.viewportHeight);
-
   // Render detail content
   return (
-    <Box flexDirection="column">
-      {/* Scroll indicator - above */}
-      {scroll.hasMore.above && <Text dimColor>↑ More above</Text>}
-
-      {/* Visible content */}
-      {visibleLines.map((line, idx) => (
-        <Text key={scroll.scrollOffset + idx}>{line}</Text>
-      ))}
-
-      {/* Scroll indicator - below */}
-      {scroll.hasMore.below && <Text dimColor>↓ More below</Text>}
+    <Box flexDirection="column" margin={1}>
+      <ScrollView ref={scrollRef}>{renderedLines}</ScrollView>
     </Box>
   );
 }
@@ -193,7 +151,7 @@ function formatRecipeContent(recipe: Recipe): string[] {
 
   // Notes section
   if (recipe.notes?.trim()) {
-    lines.push('📌 Notes');
+    lines.push('Notes');
     lines.push('─'.repeat(8));
     lines.push(...wrapText(recipe.notes, maxWidth));
     lines.push('');
@@ -201,7 +159,7 @@ function formatRecipeContent(recipe: Recipe): string[] {
 
   // Source section
   if (recipe.source || recipe.source_url) {
-    lines.push('🔗 Source');
+    lines.push('Source');
     lines.push('─'.repeat(10));
     if (recipe.source) {
       lines.push(recipe.source);
@@ -214,7 +172,7 @@ function formatRecipeContent(recipe: Recipe): string[] {
 
   // Nutritional info section
   if (recipe.nutritional_info?.trim()) {
-    lines.push('🥦 Nutritional Information');
+    lines.push('Nutritional Information');
     lines.push('─'.repeat(27));
     lines.push(...wrapText(recipe.nutritional_info, maxWidth));
     lines.push('');

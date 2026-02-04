@@ -68,11 +68,6 @@ export function RecipeListPane({ height }: RecipeListPaneProps): React.ReactElem
   // Keyboard navigation for list (only when list pane is focused and search not active)
   useInput(
     (_input, key) => {
-      // Only handle navigation when list pane is focused and search is not active
-      if (activePaneId !== 'list' || isSearchActive) {
-        return;
-      }
-
       const maxIndex = filteredRecipes.length - 1;
 
       // Up arrow: move selection up

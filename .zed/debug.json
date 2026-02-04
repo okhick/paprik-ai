@@ -1,0 +1,23 @@
+[
+  {
+    "label": "Debug paprik",
+    "adapter": "JavaScript",
+    "type": "node",
+    "request": "launch",
+    "program": "$ZED_WORKTREE_ROOT/dist/index.js",
+    "args": ["tui"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "skipFiles": ["<node_internals>/**"],
+  },
+  {
+    "label": "Build & Debug paprik",
+    "adapter": "JavaScript",
+    "type": "node",
+    "request": "launch",
+    "program": "$ZED_WORKTREE_ROOT/dist/index.js",
+    "args": ["tui"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "skipFiles": ["<node_internals>/**"],
+    "build": "Build paprik",
+  },
+]

@@ -1,0 +1,8 @@
+[
+  {
+    "label": "Build paprik",
+    "command": "npm",
+    "args": ["run", "build"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+  },
+]
