@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { Box, Text, useInput } from 'ink';
+import { Box, Text, useInput, useStdout } from 'ink';
 import { useAppState } from './AppContext.js';
 
 import type { Recipe } from '../../types/recipe.js';
@@ -13,6 +13,7 @@ import { ScrollView, ScrollViewRef } from 'ink-scroll-view';
  */
 export function RecipeDetailPane(): React.ReactElement {
   const state = useAppState();
+  const { stdout } = useStdout();
   const { recipes, selectedRecipeId, activePaneId } = state;
 
   // Find the selected recipe
@@ -34,6 +35,15 @@ export function RecipeDetailPane(): React.ReactElement {
     scrollRef.current?.scrollToTop();
   }, [selectedRecipeId, scrollRef.current]);
 
+  // Handle Terminal Resizing due to manual window change
+  useEffect(() => {
+    const handleResize = () => scrollRef.current?.remeasure();
+    stdout?.on('resize', handleResize);
+    return () => {
+      stdout?.off('resize', handleResize);
+    };
+  }, [stdout]);
+
   // Keyboard navigation for scrolling (only when detail pane is focused)
   useInput(
     (_input, key) => {
@@ -42,7 +52,16 @@ export function RecipeDetailPane(): React.ReactElement {
         scrollRef.current?.scrollBy(-1); // Scroll up 1 line
       }
       if (key.downArrow) {
-        scrollRef.current?.scrollBy(1); // Scroll down 1 line
+        // Stop scrolling if at bottom
+        const contentLength = (scrollRef.current?.getContentHeight() ?? 0) - 1;
+        const amountScrolled = scrollRef.current?.getScrollOffset() ?? 0;
+        const viewHeight = scrollRef.current?.getViewportHeight() ?? 0;
+        const canScrollMore = amountScrolled + viewHeight < contentLength;
+        if (!canScrollMore) {
+          return;
+        }
+
+        scrollRef.current?.scrollBy(1);
       }
     },
     { isActive: activePaneId === 'detail' }

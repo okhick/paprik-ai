@@ -83,10 +83,7 @@ function TuiAppInner(): React.ReactElement {
     [paneContentHeight]
   );
 
-  const rightPane = useMemo(
-    () => <RecipeDetailPane height={paneContentHeight} />,
-    [paneContentHeight]
-  );
+  const rightPane = () => <RecipeDetailPane />;
 
   // Show loading screen if still loading
   if (isLoading) {
@@ -107,7 +104,7 @@ function TuiAppInner(): React.ReactElement {
   }
 
   // Render main layout with panes
-  return <Layout leftPane={leftPane} rightPane={rightPane} />;
+  return <Layout leftPane={leftPane} rightPane={rightPane()} />;
 }
 
 /**
