@@ -30,11 +30,8 @@ export function RecipeListPane({ height }: RecipeListPaneProps): React.ReactElem
 
   // Account for UI elements that take up space:
   // - SearchBar: 2-3 rows (depends on filters)
-  // - Scroll indicator above: 1 row (conditional)
-  // - Scroll indicator below: 1 row (conditional)
-  // - Position indicator: 2 rows
-  // Be conservative and reserve ~6 rows for UI chrome
-  const uiChromeHeight = 6;
+  // Be conservative and reserve ~4 rows for UI chrome
+  const uiChromeHeight = 4;
   const listViewportHeight = Math.max(5, height - uiChromeHeight);
 
   // Set up scrolling with the filtered recipes
@@ -56,13 +53,15 @@ export function RecipeListPane({ height }: RecipeListPaneProps): React.ReactElem
 
   // Update context when selection changes
   useEffect(() => {
-    if (filteredRecipes.length > 0 && selectedIndex < filteredRecipes.length) {
-      const selectedRecipe = filteredRecipes[selectedIndex];
-      if (selectedRecipe && selectedRecipe.uid !== selectedRecipeId) {
-        actions.setSelectedRecipe(selectedRecipe.uid);
-      }
-    } else if (filteredRecipes.length === 0) {
+    if (filteredRecipes.length === 0 || selectedIndex > filteredRecipes.length) {
       actions.setSelectedRecipe(null);
+      return;
+    }
+
+    // If the select recipie changed, update it.
+    const selectedRecipe = filteredRecipes[selectedIndex];
+    if (selectedRecipe != null && selectedRecipe.uid !== selectedRecipeId) {
+      actions.setSelectedRecipe(selectedRecipe.uid);
     }
   }, [selectedIndex, filteredRecipes, selectedRecipeId, actions]);
 
@@ -137,16 +136,13 @@ export function RecipeListPane({ height }: RecipeListPaneProps): React.ReactElem
         <Box flexDirection="column" padding={1}>
           <Text color="gray">No recipes found</Text>
           <Text color="gray" dimColor>
-            {state.searchQuery || state.showFavorites
-              ? 'Try adjusting your search or filters (Esc to clear)'
+            {state.searchQuery
+              ? 'Try adjusting your search (Esc to clear)'
               : 'Run "paprik-ai sync" to download recipes from Paprika'}
           </Text>
         </Box>
       ) : (
         <>
-          {/* Scroll indicator - above */}
-          {scroll.hasMore.above && <Text dimColor>↑ {scroll.scrollOffset} more above</Text>}
-
           {/* Visible recipes */}
           {visibleRecipes.map((recipe, idx) => {
             const absoluteIndex = scroll.scrollOffset + idx;
@@ -161,20 +157,6 @@ export function RecipeListPane({ height }: RecipeListPaneProps): React.ReactElem
               />
             );
           })}
-
-          {/* Scroll indicator - below */}
-          {scroll.hasMore.below && (
-            <Text dimColor>
-              ↓ {filteredRecipes.length - (scroll.scrollOffset + listViewportHeight)} more below
-            </Text>
-          )}
-
-          {/* Position indicator */}
-          <Box marginTop={1}>
-            <Text dimColor>
-              Recipe {selectedIndex + 1}/{filteredRecipes.length}
-            </Text>
-          </Box>
         </>
       )}
     </Box>
@@ -191,24 +173,13 @@ interface RecipeListItemProps {
 }
 
 function RecipeListItem({ recipe, isSelected }: RecipeListItemProps): React.ReactElement {
-  // Truncate name if too long (approximate width limit)
-  const maxNameLength = 40; // Adjust based on pane width
-  const displayName =
-    recipe.name.length > maxNameLength
-      ? recipe.name.slice(0, maxNameLength - 1) + '…'
-      : recipe.name;
-
-  // Use different styling based on selection state
   const textColor = isSelected ? 'white' : undefined;
 
   return (
-    <Box paddingLeft={1}>
-      {/* Render with selection highlighting */}
-      <Box width="100%">
-        <Text bold color={textColor} inverse={isSelected}>
-          {displayName}
-        </Text>
-      </Box>
+    <Box paddingLeft={1} width="100%">
+      <Text bold color={textColor} inverse={isSelected} wrap="truncate-end">
+        {recipe.name}
+      </Text>
     </Box>
   );
 }

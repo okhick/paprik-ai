@@ -16,11 +16,6 @@ export default class Browse extends Command {
   static description = 'Browse all recipes';
 
   static flags = {
-    favorites: Flags.boolean({
-      char: 'f',
-      description: 'Show only favorite recipes',
-      default: false,
-    }),
     'min-rating': Flags.integer({
       char: 'r',
       description: 'Show recipes with minimum rating',
@@ -43,13 +38,7 @@ export default class Browse extends Command {
     const repository = new RecipeRepository(db);
 
     // Render Ink component
-    render(
-      <BrowseApp
-        repository={repository}
-        favorites={flags.favorites}
-        minRating={flags['min-rating']}
-      />
-    );
+    render(<BrowseApp repository={repository} minRating={flags['min-rating']} />);
   }
 }
 
@@ -58,11 +47,10 @@ export default class Browse extends Command {
  */
 interface BrowseAppProps {
   repository: RecipeRepository;
-  favorites?: boolean;
   minRating?: number;
 }
 
-const BrowseApp: React.FC<BrowseAppProps> = ({ repository, favorites, minRating }) => {
+const BrowseApp: React.FC<BrowseAppProps> = ({ repository, minRating }) => {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
@@ -70,15 +58,8 @@ const BrowseApp: React.FC<BrowseAppProps> = ({ repository, favorites, minRating 
 
   useEffect(() => {
     try {
-      let loadedRecipes: Recipe[];
-
-      if (favorites) {
-        loadedRecipes = repository.getFavorites();
-      } else if (minRating !== undefined) {
-        loadedRecipes = repository.getByRating(minRating);
-      } else {
-        loadedRecipes = repository.getAll();
-      }
+      const loadedRecipes: Recipe[] =
+        minRating !== undefined ? repository.getByRating(minRating) : repository.getAll();
 
       setRecipes(loadedRecipes);
       setLoading(false);
@@ -86,7 +67,7 @@ const BrowseApp: React.FC<BrowseAppProps> = ({ repository, favorites, minRating 
       setError(err instanceof Error ? err.message : String(err));
       setLoading(false);
     }
-  }, [repository, favorites, minRating]);
+  }, [repository, minRating]);
 
   if (loading) {
     return <LoadingBox message="Loading recipes..." />;
@@ -100,11 +81,7 @@ const BrowseApp: React.FC<BrowseAppProps> = ({ repository, favorites, minRating 
     return <RecipeDetail recipe={selectedRecipe} onBack={() => setSelectedRecipe(null)} />;
   }
 
-  const title = favorites
-    ? 'Favorite Recipes'
-    : minRating
-      ? `Recipes (${minRating}+ stars)`
-      : 'All Recipes';
+  const title = minRating ? `Recipes (${minRating}+ stars)` : 'All Recipes';
 
   return (
     <RecipeList

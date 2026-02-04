@@ -37,8 +37,7 @@ export function Layout({ leftPane, rightPane }: LayoutProps): React.ReactElement
   const actions = useAppActions();
 
   const { activePaneId, showHelp, isSearchActive, searchQuery } = state;
-  const { setActivePaneId, toggleHelp, setSearchQuery, setIsSearchActive, toggleFavoritesFilter } =
-    actions;
+  const { setActivePaneId, toggleHelp, setSearchQuery, setIsSearchActive } = actions;
 
   // Get terminal dimensions
   const terminalWidth = stdout?.columns || MIN_WIDTH;
@@ -112,12 +111,6 @@ export function Layout({ leftPane, rightPane }: LayoutProps): React.ReactElement
       // Activate search with '/' (when list pane focused)
       if (input === '/' && activePaneId === 'list') {
         setIsSearchActive(true);
-        return;
-      }
-
-      // Toggle favorites filter with 'f' (when list pane focused)
-      if (input === 'f' && activePaneId === 'list') {
-        toggleFavoritesFilter();
         return;
       }
 
@@ -203,11 +196,6 @@ export function Layout({ leftPane, rightPane }: LayoutProps): React.ReactElement
             Switch pane |
             <Text color="white" bold>
               {' '}
-              f
-            </Text>{' '}
-            Filter favorites |
-            <Text color="white" bold>
-              {' '}
               /
             </Text>{' '}
             Search |
@@ -258,7 +246,6 @@ function HelpBox({ width, height }: { width: number; height: number }) {
         <Text> Page Up/Down - Page through list</Text>
         <Text> Home/End - Jump to first/last recipe</Text>
         <Text> / - Activate search</Text>
-        <Text> f - Toggle favorites filter</Text>
       </Box>
       <Box marginTop={1} flexDirection="column">
         <Text bold color="cyan">

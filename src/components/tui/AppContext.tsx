@@ -69,7 +69,6 @@ export function AppProvider({ children }: AppProviderProps): React.ReactElement 
   const [searchQuery, setSearchQuery] = useState(''); // Immediate input shown in UI
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(''); // Debounced query for filtering
   const [isSearchActive, setIsSearchActive] = useState(false);
-  const [showFavorites, setShowFavorites] = useState(false);
   const [recipes, setRecipes] = useState<IndexedRecipe[]>([]);
   const [showHelp, setShowHelp] = useState(false);
 
@@ -96,32 +95,17 @@ export function AppProvider({ children }: AppProviderProps): React.ReactElement 
     };
   }, [searchQuery]);
 
-  // Filtered recipes based on debounced search query and favorites filter
+  // Filtered recipes based on debounced search query
   const filteredRecipes = useMemo(() => {
-    let filtered = recipes;
-
-    // Apply favorites filter
-    if (showFavorites) {
-      filtered = filtered.filter((recipe) => recipe.on_favorites);
+    if (!debouncedSearchQuery.trim()) {
+      return recipes;
     }
 
-    // Apply search filter (case-insensitive, multi-field)
-    // Use debounced query to prevent excessive filtering while typing
-    if (debouncedSearchQuery.trim()) {
-      const query = debouncedSearchQuery.toLowerCase();
-
-      // Use precomputed search text for faster filtering
-      filtered = filtered.filter((recipe) => recipe._searchText?.includes(query));
-    }
-
-    return filtered;
-  }, [recipes, debouncedSearchQuery, showFavorites]);
+    const query = debouncedSearchQuery.toLowerCase();
+    return recipes.filter((recipe) => recipe._searchText?.includes(query));
+  }, [recipes, debouncedSearchQuery]);
 
   // Actions
-  const toggleFavoritesFilter = useCallback(() => {
-    setShowFavorites((prev) => !prev);
-  }, []);
-
   const toggleHelp = useCallback(() => {
     setShowHelp((prev) => !prev);
   }, []);
@@ -154,7 +138,6 @@ export function AppProvider({ children }: AppProviderProps): React.ReactElement 
       selectedRecipeId,
       searchQuery,
       isSearchActive,
-      showFavorites,
       recipes,
       filteredRecipes,
       showHelp,
@@ -164,7 +147,6 @@ export function AppProvider({ children }: AppProviderProps): React.ReactElement 
       selectedRecipeId,
       searchQuery,
       isSearchActive,
-      showFavorites,
       recipes,
       filteredRecipes,
       showHelp,
@@ -178,11 +160,10 @@ export function AppProvider({ children }: AppProviderProps): React.ReactElement 
       setSelectedRecipe: setSelectedRecipeId,
       setSearchQuery,
       setIsSearchActive,
-      toggleFavoritesFilter,
       toggleHelp,
       loadRecipes,
     }),
-    [toggleFavoritesFilter, toggleHelp, loadRecipes]
+    [toggleHelp, loadRecipes]
   );
 
   const contextValue = useMemo(() => ({ state, actions }), [state, actions]);

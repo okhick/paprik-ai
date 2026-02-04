@@ -10,19 +10,12 @@ import { useAppState } from './AppContext.js';
  */
 export function SearchBar(): React.ReactElement {
   const state = useAppState();
-  const { searchQuery, isSearchActive, showFavorites, filteredRecipes, recipes } = state;
-
-  // Build filter indicators
-  const filterIndicators: string[] = [];
-
-  if (showFavorites) {
-    filterIndicators.push('★ Favorites');
-  }
+  const { searchQuery, isSearchActive, filteredRecipes, recipes } = state;
 
   // Result count
   const resultCount = filteredRecipes.length;
   const totalCount = recipes.length;
-  const hasFilters = searchQuery.trim() || showFavorites;
+  const hasFilters = searchQuery.trim();
 
   return (
     <Box flexDirection="column" marginBottom={1}>
@@ -37,17 +30,10 @@ export function SearchBar(): React.ReactElement {
         {isSearchActive && <Text color="yellow">▊</Text>}
       </Box>
 
-      {/* Filter indicators and result count */}
-      {(hasFilters || filterIndicators.length > 0) && (
+      {/* Result count */}
+      {hasFilters && (
         <Box marginTop={0}>
-          {filterIndicators.length > 0 && (
-            <Box marginRight={2}>
-              <Text color="magenta">{filterIndicators.join(' · ')}</Text>
-            </Box>
-          )}
-          <Text dimColor>
-            {hasFilters ? `${resultCount} of ${totalCount} recipes` : `${totalCount} recipes`}
-          </Text>
+          <Text dimColor>{`${resultCount} of ${totalCount} recipes`}</Text>
         </Box>
       )}
     </Box>

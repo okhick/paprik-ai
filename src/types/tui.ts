@@ -21,9 +21,6 @@ export interface AppState {
   /** Whether search input is active (user is typing) */
   isSearchActive: boolean;
 
-  /** Whether favorites filter is enabled */
-  showFavorites: boolean;
-
   /** All recipes loaded from database */
   recipes: Recipe[];
 
@@ -42,7 +39,6 @@ export interface AppActions {
   setSelectedRecipe: (recipeId: string | null) => void;
   setSearchQuery: (query: string) => void;
   setIsSearchActive: (active: boolean) => void;
-  toggleFavoritesFilter: () => void;
   toggleHelp: () => void;
   loadRecipes: (recipes: Recipe[]) => void;
 }
