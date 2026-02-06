@@ -66,26 +66,12 @@ export function RecipeDetailPane(): React.ReactElement {
     { isActive: activePaneId === 'detail' }
   );
 
-  // Format recipe content into lines
-  const contentLines = useMemo(() => {
-    if (!selectedRecipe) return [];
-    return formatRecipeContent(selectedRecipe);
-  }, [selectedRecipe]);
-
-  // Render the recipies
-  const renderLine = (line: string, idx: number) => {
-    if (line === '' && idx > 0) {
-      return <Text key={idx}> </Text>;
-    }
-
-    return <Text key={idx}>{line}</Text>;
-  };
   const renderedLines = useMemo(() => {
     if (selectedRecipe == null) {
       return [];
     }
     return format(selectedRecipe, 60);
-  }, [contentLines]);
+  }, [selectedRecipe]);
 
   // Update the scroll bar size when the content changes
   useEffect(() => setScrollBarSize(renderedLines.length - 1), [renderedLines]);
@@ -302,9 +288,10 @@ function format(recipe: Recipe, wrap: number): React.JSX.Element[] {
           if (dir.trim() === '') {
             return <Text> </Text>;
           }
+
           return (
             <Box>
-              <Text>{dir}</Text>
+              <Text bold={parseMarkdownBold(dir)}>{dir}</Text>
             </Box>
           );
         })}
@@ -319,22 +306,38 @@ function format(recipe: Recipe, wrap: number): React.JSX.Element[] {
  * Parse ingredients from JSON string or plain text
  */
 function parseIngredients(ingredientsStr: string): React.JSX.Element[] {
-  return ingredientsStr.split('\n').map((line, index) => {
+  const ingredientsSplit = ingredientsStr.split('\n');
+
+  return ingredientsSplit.map((line, index) => {
     const trimmed = line.trim();
     // Preserve empty lines
     if (trimmed === '') {
       return <Text> </Text>;
     }
-    // Bold if the last character is a colon
-    if (trimmed.at(-1) === ':') {
+
+    const isBold = parseMarkdownBold(trimmed) || trimmed.at(-1) === ':';
+
+    // Bold if the last character is a colon and add space
+    if (isBold) {
+      // If the previous line is a space, then we don't need more space
+      const needsSpace = ingredientsSplit.at(index - 1)?.trim() !== '' && index > 0;
       return (
-        <Box marginTop={index === 0 ? 0 : 1}>
+        <Box marginTop={needsSpace ? 1 : 0}>
           <Text bold>{trimmed}</Text>
         </Box>
       );
     }
     return <Text>• {trimmed}</Text>;
   });
+}
+
+function parseMarkdownBold(maybeBold: string): boolean {
+  if (maybeBold.length <= 4) {
+    return false;
+  }
+
+  // Parse for **Bold**
+  return maybeBold.slice(0, 2) === '**' && maybeBold.slice(maybeBold.length - 2) === '**';
 }
 
 /**
