@@ -21,13 +21,13 @@ export function SearchBar(): React.ReactElement {
     <Box flexDirection="column" marginBottom={1}>
       {/* Search input line */}
       <Box>
-        <Text color="cyan" bold>
+        <Text color="red" bold>
           Search:{' '}
         </Text>
-        <Text color={isSearchActive ? 'yellow' : 'white'}>
+        <Text color={'white'} dimColor={!isSearchActive}>
           {searchQuery || (isSearchActive ? '' : '(press / to search)')}
         </Text>
-        {isSearchActive && <Text color="yellow">▊</Text>}
+        {isSearchActive && <Text color="white">▊</Text>}
       </Box>
 
       {/* Result count */}

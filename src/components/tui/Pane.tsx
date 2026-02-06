@@ -25,7 +25,7 @@ interface PaneProps {
  */
 export function Pane({ children, isFocused, title, width, height }: PaneProps): React.ReactElement {
   // Enhanced styling for better visibility
-  const borderColor = isFocused ? 'cyan' : 'gray';
+  const borderColor = isFocused ? 'white' : 'gray';
   const borderStyle = 'round'; // Consistent border style for cleaner look
   // const titleColor = isFocused ? 'cyan' : 'white';
   const titleBold = isFocused;

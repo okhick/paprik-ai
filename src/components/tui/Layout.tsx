@@ -177,7 +177,7 @@ export function Layout({ leftPane, rightPane }: LayoutProps): React.ReactElement
       </Box>
 
       {/* Status bar */}
-      <Box width={terminalWidth} height={statusBarHeight} borderStyle="round" borderColor="blue">
+      <Box width={terminalWidth} height={statusBarHeight} borderStyle="round" borderColor="red">
         <Box paddingLeft={1} paddingRight={1} flexGrow={1} alignItems="center">
           <Text color="white">
             <Text color="white" bold>

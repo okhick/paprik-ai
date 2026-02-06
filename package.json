@@ -30,6 +30,7 @@
     "topicSeparator": " "
   },
   "dependencies": {
+    "@byteland/ink-scroll-bar": "^0.1.1",
     "@oclif/core": "^4.0.0",
     "better-sqlite3": "^11.0.0",
     "ink": "^6.6.0",
