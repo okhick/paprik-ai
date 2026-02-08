@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Box, Newline, Text, useInput, useStdout } from 'ink';
+import { Box, Text, Transform, useInput, useStdout } from 'ink';
 import { useAppState } from './AppContext.js';
 import type { Recipe } from '../../types/recipe.js';
 import { ScrollView, ScrollViewRef } from 'ink-scroll-view';
@@ -278,25 +278,77 @@ function format(recipe: Recipe, wrap: number): React.JSX.Element[] {
   }
 
   if (recipe.directions != null) {
+    const splitRecipeDirections = recipe.directions.split('\n');
     formatted.push(
-      <Box flexDirection="column" {...boxDivider} marginBottom={1}>
+      <Box flexDirection="column" borderStyle="bold" {...boxDivider} marginBottom={1}>
         <Box marginBottom={1}>
           <Text dimColor>Directions</Text>
         </Box>
-        {...recipe.directions.split('\n').map((dir) => {
+        {...splitRecipeDirections.map((dir, idx) => {
           // Preserve empty lines
           if (dir.trim() === '') {
             return <Text> </Text>;
           }
 
           return (
-            <Box>
-              <Text bold={parseMarkdownBold(dir)}>{dir}</Text>
+            <Box marginBottom={idx === splitRecipeDirections.length - 1 ? 1 : 0}>
+              <TrimLeadingWhitespace>
+                <Text bold={parseMarkdownBold(dir)}>{dir}</Text>
+              </TrimLeadingWhitespace>
             </Box>
           );
         })}
       </Box>
     );
+  }
+
+  if (recipe.notes != null && recipe.notes.trim() !== '') {
+    formatted.push(
+      <Box flexDirection="column" {...boxDivider} marginBottom={1}>
+        <Box marginBottom={1}>
+          <Text dimColor>Notes</Text>
+        </Box>
+        <TrimLeadingWhitespace>
+          <Text>{recipe.notes}</Text>
+        </TrimLeadingWhitespace>
+      </Box>
+    );
+  }
+
+  if (
+    (recipe.source != null && recipe.source.trim() !== '') ||
+    (recipe.source_url != null && recipe.source_url.trim() !== '')
+  ) {
+    formatted.push(
+      <Box flexDirection="column" {...boxDivider} marginBottom={1}>
+        <Box marginBottom={1}>
+          <Text dimColor>Source</Text>
+        </Box>
+        {recipe.source != null && (
+          <TrimLeadingWhitespace>
+            <Text>{recipe.source}</Text>
+          </TrimLeadingWhitespace>
+        )}
+        {recipe.source_url != null && (
+          <TrimLeadingWhitespace>
+            <Text>{recipe.source_url}</Text>
+          </TrimLeadingWhitespace>
+        )}
+      </Box>
+    );
+
+    if (recipe.nutritional_info != null && recipe.nutritional_info.trim() !== '') {
+      formatted.push(
+        <Box flexDirection="column" {...boxDivider} marginBottom={1}>
+          <Box marginBottom={1}>
+            <Text dimColor>Nutritional Info</Text>
+          </Box>
+          <TrimLeadingWhitespace>
+            <Text>{recipe.nutritional_info}</Text>
+          </TrimLeadingWhitespace>
+        </Box>
+      );
+    }
   }
 
   return formatted;
@@ -323,7 +375,9 @@ function parseIngredients(ingredientsStr: string): React.JSX.Element[] {
       const needsSpace = ingredientsSplit.at(index - 1)?.trim() !== '' && index > 0;
       return (
         <Box marginTop={needsSpace ? 1 : 0}>
-          <Text bold>{trimmed}</Text>
+          <TrimLeadingWhitespace>
+            <Text bold>{trimmed}</Text>
+          </TrimLeadingWhitespace>
         </Box>
       );
     }
@@ -338,6 +392,10 @@ function parseMarkdownBold(maybeBold: string): boolean {
 
   // Parse for **Bold**
   return maybeBold.slice(0, 2) === '**' && maybeBold.slice(maybeBold.length - 2) === '**';
+}
+
+function TrimLeadingWhitespace({ children }: { children: React.ReactNode }): React.ReactNode {
+  return <Transform transform={(content) => content.trimStart()}>{children}</Transform>;
 }
 
 /**
