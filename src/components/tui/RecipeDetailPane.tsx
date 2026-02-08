@@ -29,15 +29,24 @@ export function RecipeDetailPane(): React.ReactElement {
     [recipes, selectedRecipeId]
   );
 
+  // Update scrollbar metrics helper
+  const updateScrollbarMetrics = () => {
+    setScrollBarOffset(scrollRef.current?.getScrollOffset() ?? 0);
+    setScrollBarSize(scrollRef.current?.getContentHeight() ?? 0);
+  };
+
   // Reset scroll position when selected recipe changes
   useEffect(() => {
     scrollRef.current?.scrollToTop();
-    setScrollBarOffset(0);
-  }, [selectedRecipeId, scrollRef.current]);
+    updateScrollbarMetrics();
+  }, [selectedRecipeId]);
 
   // Handle Terminal Resizing due to manual window change
   useEffect(() => {
-    const handleResize = () => scrollRef.current?.remeasure();
+    const handleResize = () => {
+      scrollRef.current?.remeasure();
+      updateScrollbarMetrics();
+    };
     stdout?.on('resize', handleResize);
     return () => {
       stdout?.off('resize', handleResize);
@@ -50,7 +59,7 @@ export function RecipeDetailPane(): React.ReactElement {
       // Up arrow: scroll up
       if (key.upArrow) {
         scrollRef.current?.scrollBy(-1); // Scroll up 1 line
-        setScrollBarOffset(scrollRef.current?.getScrollOffset() ?? 0);
+        updateScrollbarMetrics();
       }
       if (key.downArrow) {
         // Stop scrolling if at bottom
@@ -62,7 +71,7 @@ export function RecipeDetailPane(): React.ReactElement {
           return;
         }
         scrollRef.current?.scrollBy(1);
-        setScrollBarOffset(scrollRef.current?.getScrollOffset() ?? 0);
+        updateScrollbarMetrics();
       }
     },
     { isActive: activePaneId === 'detail' }
@@ -75,8 +84,12 @@ export function RecipeDetailPane(): React.ReactElement {
     return format(selectedRecipe);
   }, [selectedRecipe]);
 
-  // Update the scroll bar size when the content changes
-  useEffect(() => setScrollBarSize(renderedLines.length - 1), [renderedLines]);
+  // Update scrollbar metrics after content renders
+  // Note: We need to defer this slightly because ScrollView measures content asynchronously
+  useEffect(() => {
+    const timer = setImmediate(() => updateScrollbarMetrics());
+    return () => clearImmediate(timer);
+  }, [renderedLines]);
 
   // Handle no recipe selected
   if (!selectedRecipe) {
