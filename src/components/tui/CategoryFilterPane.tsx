@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { useAppState, useAppActions } from './AppContext.js';
 import type { Category } from '../../types/recipe.js';
+import type { FocusPane } from '../../types/tui.js';
 import { ScrollView, ScrollViewRef } from 'ink-scroll-view';
 import { ScrollBar } from '@byteland/ink-scroll-bar';
 
@@ -9,8 +10,8 @@ import { ScrollBar } from '@byteland/ink-scroll-bar';
  * Props for CategoryFilterPane component
  */
 interface CategoryFilterPaneProps {
-  width: number;
   height: number;
+  activePaneId: FocusPane;
 }
 
 /**
@@ -29,25 +30,31 @@ interface CategoryNode extends CategoryWithMeta {
 }
 
 /**
- * Category filter modal overlay
+ * Category filter pane for inline display in the layout
  *
  * Features:
  * - Scrollable list of all categories
  * - Visual selection indicator: [x] selected / [ ] unselected
  * - Nested categories with indentation
  * - Recipe count per category
- * - Keyboard controls: Up/Down, Space/Enter, Escape
+ * - Keyboard controls: Up/Down, Space/Enter, x to clear, Escape to close
  */
-export function CategoryFilterPane({ width, height }: CategoryFilterPaneProps): React.ReactElement {
+export function CategoryFilterPane({
+  height,
+  activePaneId,
+}: CategoryFilterPaneProps): React.ReactElement {
   const state = useAppState();
   const actions = useAppActions();
   const { categories, recipes, selectedCategoryUids } = state;
-  const { toggleCategoryFilter, setIsCategoryFilterActive, clearCategoryFilters } = actions;
+  const { toggleCategoryFilter, setIsCategoryFilterActive, clearCategoryFilters, setActivePaneId } =
+    actions;
 
   const [selectedIndex, setSelectedIndex] = useState(0);
   const scrollRef = useRef<ScrollViewRef>(null);
   const [scrollBarOffset, setScrollBarOffset] = useState(0);
   const [scrollBarSize, setScrollBarSize] = useState(0);
+
+  const isFocused = activePaneId === 'categories';
 
   const updateScrollbarMetrics = () => {
     setScrollBarOffset(scrollRef.current?.getScrollOffset() ?? 0);
@@ -160,7 +167,7 @@ export function CategoryFilterPane({ width, height }: CategoryFilterPaneProps): 
     return () => clearImmediate(timer);
   }, []);
 
-  // Handle keyboard input
+  // Handle keyboard input (only when this pane is focused)
   useInput(
     (input, key) => {
       // Navigate up
@@ -197,63 +204,50 @@ export function CategoryFilterPane({ width, height }: CategoryFilterPaneProps): 
         return;
       }
 
-      // Close with Escape (apply filters)
+      // Close pane with Escape
       if (key.escape) {
         setIsCategoryFilterActive(false);
+        setActivePaneId('list');
         return;
       }
     },
-    { isActive: true }
+    { isActive: isFocused }
   );
 
   return (
-    <Box
-      flexDirection="column"
-      width={width}
-      height={height}
-      borderStyle="round"
-      borderColor="cyan"
-      padding={1}
-    >
-      <Text bold underline>
-        Filter by Category
-      </Text>
+    <Box flexDirection="row" height={height}>
+      {categoriesWithMeta.length === 0 ? (
+        <Text dimColor>No categories available</Text>
+      ) : (
+        <>
+          <ScrollView ref={scrollRef} marginRight={1}>
+            {categoriesWithMeta.map((category, idx) => {
+              const isSelected = selectedCategoryUids.includes(category.uid);
+              const isHighlighted = selectedIndex === idx;
+              const indent = '  '.repeat(category.depth);
 
-      <Box marginTop={1} flexDirection="row" flexGrow={1}>
-        {categoriesWithMeta.length === 0 ? (
-          <Text dimColor>No categories available</Text>
-        ) : (
-          <>
-            <ScrollView ref={scrollRef} marginRight={1}>
-              {categoriesWithMeta.map((category, idx) => {
-                const isSelected = selectedCategoryUids.includes(category.uid);
-                const isHighlighted = selectedIndex === idx;
-                const indent = '  '.repeat(category.depth);
-
-                return (
-                  <Box key={category.uid}>
-                    <Text inverse={isHighlighted} color={isSelected ? 'cyan' : undefined}>
-                      {indent}
-                      {isSelected ? '[✓]' : '[ ]'} {category.name} ({category.recipeCount})
-                    </Text>
-                  </Box>
-                );
-              })}
-            </ScrollView>
-            <ScrollBar
-              placement="inset"
-              dimColor
-              viewportHeight={scrollRef.current?.getViewportHeight() ?? 0}
-              contentHeight={scrollBarSize}
-              scrollOffset={scrollBarOffset}
-            />
-          </>
-        )}
-      </Box>
-
-      <Box marginTop={1}>
-        <Text dimColor>Space: toggle | x: clear | Esc: apply</Text>
-      </Box>
+              return (
+                <Box key={category.uid}>
+                  <Text
+                    inverse={isHighlighted && isFocused}
+                    color={isSelected ? 'cyan' : undefined}
+                  >
+                    {indent}
+                    {isSelected ? '[✓]' : '[ ]'} {category.name} ({category.recipeCount})
+                  </Text>
+                </Box>
+              );
+            })}
+          </ScrollView>
+          <ScrollBar
+            placement="inset"
+            dimColor
+            viewportHeight={scrollRef.current?.getViewportHeight() ?? 0}
+            contentHeight={scrollBarSize}
+            scrollOffset={scrollBarOffset}
+          />
+        </>
+      )}
     </Box>
   );
 }

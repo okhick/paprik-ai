@@ -3,7 +3,7 @@ import type { Recipe, Category } from './recipe.js';
 /**
  * Identifies which pane currently has focus
  */
-export type FocusPane = 'list' | 'detail';
+export type FocusPane = 'categories' | 'list' | 'detail';
 
 /**
  * Global application state for the TUI
