@@ -49,7 +49,7 @@ export function SearchBar(): React.ReactElement {
             Categories:{' '}
           </Text>
           <Text>{selectedCategoryNames.join(', ')}</Text>
-          <Text dimColor> (c to change, x to clear)</Text>
+          <Text dimColor> (x to clear)</Text>
         </Box>
       )}
 

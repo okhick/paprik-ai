@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useStdout, Text, Box } from 'ink';
-import { AppProvider, useAppActions } from './AppContext.js';
+import { AppProvider, useAppActions, useAppState } from './AppContext.js';
 import { Layout } from './Layout.js';
 import { RecipeListPane } from './RecipeListPane.js';
 import { RecipeDetailPane } from './RecipeDetailPane.js';
+import { CategoryFilterPane } from './CategoryFilterPane.js';
 import { RecipeRepository } from '../../db/repositories/recipes.js';
 import { CategoryRepository } from '../../db/repositories/categories.js';
 
@@ -28,6 +29,7 @@ function LoadingScreen() {
  */
 function TuiAppInner(): React.ReactElement {
   const actions = useAppActions();
+  const state = useAppState();
   const { stdout } = useStdout();
   // Simple loading state
   const [isLoading, setIsLoading] = useState(true);
@@ -97,6 +99,11 @@ function TuiAppInner(): React.ReactElement {
 
   const rightPane = () => <RecipeDetailPane />;
 
+  const categoryPaneContent = useMemo(
+    () => <CategoryFilterPane height={paneContentHeight} activePaneId={state.activePaneId} />,
+    [paneContentHeight, state.activePaneId]
+  );
+
   // Show loading screen if still loading
   if (isLoading) {
     return <LoadingScreen />;
@@ -116,7 +123,7 @@ function TuiAppInner(): React.ReactElement {
   }
 
   // Render main layout with panes
-  return <Layout leftPane={leftPane} rightPane={rightPane()} />;
+  return <Layout categoryPane={categoryPaneContent} leftPane={leftPane} rightPane={rightPane()} />;
 }
 
 /**

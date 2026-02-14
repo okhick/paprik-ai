@@ -171,9 +171,7 @@ function format(recipe: Recipe, allCategories: Category[]): React.JSX.Element[] 
     formatted.push(
       <Box flexDirection="column" marginBottom={1}>
         <Text dimColor>Categories</Text>
-        {...dedupedPaths.map((path) => (
-          <Text>  {path}</Text>
-        ))}
+        {...dedupedPaths.map((path) => <Text> {path}</Text>)}
       </Box>
     );
   }
