@@ -268,4 +268,45 @@ export class RecipeRepository {
     const result = this.db.prepare(query).get() as { count: number };
     return result.count;
   }
+
+  /**
+   * Link recipe to categories (manages recipe_categories junction table)
+   */
+  linkCategories(recipeUid: string, categoryUids: string[]): void {
+    // Clear existing category links
+    this.db.prepare('DELETE FROM recipe_categories WHERE recipe_uid = ?').run(recipeUid);
+
+    // Insert new category links
+    if (categoryUids.length > 0) {
+      const stmt = this.db.prepare(`
+        INSERT INTO recipe_categories (recipe_uid, category_uid)
+        VALUES (?, ?)
+      `);
+
+      for (const categoryUid of categoryUids) {
+        stmt.run(recipeUid, categoryUid);
+      }
+    }
+  }
+
+  /**
+   * Get recipes matching ANY of the provided categories (OR query)
+   */
+  getByCategoryUids(categoryUids: string[]): Recipe[] {
+    if (categoryUids.length === 0) {
+      return [];
+    }
+
+    const placeholders = categoryUids.map(() => '?').join(',');
+    return this.db
+      .prepare(
+        `
+      SELECT DISTINCT r.* FROM recipes r
+      JOIN recipe_categories rc ON r.uid = rc.recipe_uid
+      WHERE rc.category_uid IN (${placeholders}) AND r.in_trash = 0
+      ORDER BY r.name COLLATE NOCASE
+    `
+      )
+      .all(...categoryUids) as Recipe[];
+  }
 }

@@ -5,6 +5,7 @@ import { Layout } from './Layout.js';
 import { RecipeListPane } from './RecipeListPane.js';
 import { RecipeDetailPane } from './RecipeDetailPane.js';
 import { RecipeRepository } from '../../db/repositories/recipes.js';
+import { CategoryRepository } from '../../db/repositories/categories.js';
 
 /**
  * Simple loading screen component
@@ -46,14 +47,25 @@ function TuiAppInner(): React.ReactElement {
     }, 3000);
 
     try {
-      // Create recipe repository and get all recipes
-      const repo = new RecipeRepository();
-      const recipes = repo.getAll();
+      // Create repositories
+      const recipeRepo = new RecipeRepository();
+      const categoryRepo = new CategoryRepository();
+
+      // Load categories
+      const categories = categoryRepo.getAll();
+
+      // Load recipes and attach categories to each
+      const recipes = recipeRepo.getAll();
+      const recipesWithCategories = recipes.map((recipe) => {
+        const recipeCategories = categoryRepo.getByRecipe(recipe.uid);
+        return { ...recipe, categories: recipeCategories };
+      });
 
       // Update state if component is still mounted
       if (mounted) {
-        console.log(`Loaded ${recipes.length} recipes`);
-        actions.loadRecipes(recipes);
+        console.log(`Loaded ${categories.length} categories and ${recipes.length} recipes`);
+        actions.loadCategories(categories);
+        actions.loadRecipes(recipesWithCategories);
         setIsLoading(false);
       }
     } catch (err) {
@@ -69,7 +81,7 @@ function TuiAppInner(): React.ReactElement {
       mounted = false;
       clearTimeout(timer);
     };
-  }, [actions, isLoading]);
+  }, []);
 
   // Calculate available height for pane contents
   // Pane wrapper subtracts: 2 (borders) + 1 (title) = 3 rows

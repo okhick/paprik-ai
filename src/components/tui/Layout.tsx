@@ -3,6 +3,7 @@ import { Box, Text, useInput } from 'ink';
 import { useStdout } from 'ink';
 import { useAppState, useAppActions } from './AppContext.js';
 import { Pane } from './Pane.js';
+import { CategoryFilterPane } from './CategoryFilterPane.js';
 
 /**
  * Minimum supported terminal dimensions
@@ -36,8 +37,22 @@ export function Layout({ leftPane, rightPane }: LayoutProps): React.ReactElement
   const state = useAppState();
   const actions = useAppActions();
 
-  const { activePaneId, showHelp, isSearchActive, searchQuery } = state;
-  const { setActivePaneId, toggleHelp, setSearchQuery, setIsSearchActive } = actions;
+  const {
+    activePaneId,
+    showHelp,
+    isSearchActive,
+    searchQuery,
+    isCategoryFilterActive,
+    selectedCategoryUids,
+  } = state;
+  const {
+    setActivePaneId,
+    toggleHelp,
+    setSearchQuery,
+    setIsSearchActive,
+    setIsCategoryFilterActive,
+    clearCategoryFilters,
+  } = actions;
 
   // Get terminal dimensions
   const terminalWidth = stdout?.columns || MIN_WIDTH;
@@ -74,8 +89,20 @@ export function Layout({ leftPane, rightPane }: LayoutProps): React.ReactElement
         return;
       }
 
-      // Don't process other keys when help is showing
-      if (showHelp) {
+      // Don't process other keys when help or category filter is showing
+      if (showHelp || isCategoryFilterActive) {
+        return;
+      }
+
+      // 'c' - Open category filter (when list pane focused, not searching)
+      if (input === 'c' && activePaneId === 'list' && !isSearchActive) {
+        setIsCategoryFilterActive(true);
+        return;
+      }
+
+      // 'x' - Clear category filters (quick clear)
+      if (input === 'x' && activePaneId === 'list' && selectedCategoryUids.length > 0) {
+        clearCategoryFilters();
         return;
       }
 
@@ -160,6 +187,9 @@ export function Layout({ leftPane, rightPane }: LayoutProps): React.ReactElement
   if (showHelp) {
     return <HelpBox width={terminalWidth} height={terminalHeight} />;
   }
+  if (isCategoryFilterActive) {
+    return <CategoryFilterPane width={terminalWidth} height={terminalHeight} />;
+  }
 
   // Render two-pane layout
   return (
@@ -199,6 +229,11 @@ export function Layout({ leftPane, rightPane }: LayoutProps): React.ReactElement
               /
             </Text>{' '}
             Search |
+            <Text color="white" bold>
+              {' '}
+              c
+            </Text>{' '}
+            Categories |
             <Text color="white" bold>
               {' '}
               ↑/↓
@@ -246,6 +281,8 @@ function HelpBox({ width, height }: { width: number; height: number }) {
         <Text> Page Up/Down - Page through list</Text>
         <Text> Home/End - Jump to first/last recipe</Text>
         <Text> / - Activate search</Text>
+        <Text> c - Filter by category</Text>
+        <Text> x - Clear category filters</Text>
       </Box>
       <Box marginTop={1} flexDirection="column">
         <Text bold color="cyan">

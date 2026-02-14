@@ -29,13 +29,14 @@ export const PaprikaRecipeSchema = z.object({
   hash: z.string().nullish(),
   created: z.string().nullish(),
   photo_hash: z.string().nullish(),
+  categories: z.array(z.string()).optional(), // Array of category UIDs
 });
 
 export const PaprikaCategorySchema = z.object({
   uid: z.string(),
   order_flag: z.number().optional(),
   name: z.string(),
-  parent_uid: z.string().optional(),
+  parent_uid: z.string().nullable(),
 });
 
 export const PaprikaMealSchema = z.object({

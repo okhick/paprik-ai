@@ -1,4 +1,4 @@
-import type { Recipe } from './recipe.js';
+import type { Recipe, Category } from './recipe.js';
 
 /**
  * Identifies which pane currently has focus
@@ -29,6 +29,15 @@ export interface AppState {
 
   /** Whether help overlay is visible */
   showHelp: boolean;
+
+  /** All available categories */
+  categories: Category[];
+
+  /** Active category filter UIDs (empty = show all) */
+  selectedCategoryUids: string[];
+
+  /** Whether category filter UI is visible */
+  isCategoryFilterActive: boolean;
 }
 
 /**
@@ -41,6 +50,10 @@ export interface AppActions {
   setIsSearchActive: (active: boolean) => void;
   toggleHelp: () => void;
   loadRecipes: (recipes: Recipe[]) => void;
+  loadCategories: (categories: Category[]) => void;
+  toggleCategoryFilter: (categoryUid: string) => void;
+  clearCategoryFilters: () => void;
+  setIsCategoryFilterActive: (active: boolean) => void;
 }
 
 /**

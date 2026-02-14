@@ -5,6 +5,7 @@ import { Box, Text } from 'ink';
 import { PaprikaClient } from '../api/client.js';
 import { createRecipeApi } from '../api/recipes.js';
 import { RecipeRepository } from '../db/repositories/recipes.js';
+import { CategoryRepository } from '../db/repositories/categories.js';
 import { SyncService, SyncStatus } from '../services/sync.js';
 import { getDatabase } from '../db/index.js';
 import { getConfig, validateConfig } from '../utils/config.js';
@@ -28,13 +29,14 @@ export default class Sync extends Command {
     // Initialize services
     const db = getDatabase(config.databasePath);
     const repository = new RecipeRepository(db);
+    const categoryRepository = new CategoryRepository(db);
     const client = new PaprikaClient({
       email: config.paprikaEmail!,
       password: config.paprikaPassword!,
       baseUrl: config.apiBaseUrl,
     });
     const api = createRecipeApi(client);
-    const syncService = new SyncService(api, repository);
+    const syncService = new SyncService(api, repository, categoryRepository);
 
     // Render Ink component
     render(<SyncApp syncService={syncService} />);
@@ -56,6 +58,12 @@ const SyncApp: React.FC<SyncAppProps> = ({ syncService }) => {
   useEffect(() => {
     const performSync = async () => {
       try {
+        // First sync categories
+        await syncService.syncCategories((progress) => {
+          setStatus(progress);
+        });
+
+        // Then sync recipes
         const finalStatus = await syncService.syncRecipes((progress) => {
           setStatus(progress);
         });
@@ -87,9 +95,17 @@ const SyncApp: React.FC<SyncAppProps> = ({ syncService }) => {
   return (
     <Layout title="Syncing Recipes">
       <Box flexDirection="column" gap={1}>
+        {status.categories.total > 0 && (
+          <Box>
+            <Text>
+              Categories: {status.categories.synced} / {status.categories.total}
+            </Text>
+          </Box>
+        )}
+
         <Box>
           <Text>
-            Progress: {status.synced} / {status.total} ({progress}%)
+            Recipes: {status.synced} / {status.total} ({progress}%)
           </Text>
         </Box>
 
@@ -104,7 +120,8 @@ const SyncApp: React.FC<SyncAppProps> = ({ syncService }) => {
             <Text color="green" bold>
               ✓ Sync complete!
             </Text>
-            <Text>Successfully synced: {status.synced}</Text>
+            <Text>Categories synced: {status.categories.synced}</Text>
+            <Text>Recipes synced: {status.synced}</Text>
             {status.failed > 0 && <Text color="red">Failed: {status.failed}</Text>}
           </Box>
         )}

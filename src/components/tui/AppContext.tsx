@@ -8,7 +8,7 @@ import React, {
   useRef,
 } from 'react';
 import type { AppState, AppActions, FocusPane } from '../../types/tui.js';
-import type { Recipe } from '../../types/recipe.js';
+import type { Recipe, Category } from '../../types/recipe.js';
 
 /**
  * Recipe with precomputed search fields for optimized filtering
@@ -71,6 +71,9 @@ export function AppProvider({ children }: AppProviderProps): React.ReactElement 
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [recipes, setRecipes] = useState<IndexedRecipe[]>([]);
   const [showHelp, setShowHelp] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategoryUids, setSelectedCategoryUids] = useState<string[]>([]);
+  const [isCategoryFilterActive, setIsCategoryFilterActive] = useState(false);
 
   // Debounce search query (300ms delay)
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -95,15 +98,25 @@ export function AppProvider({ children }: AppProviderProps): React.ReactElement 
     };
   }, [searchQuery]);
 
-  // Filtered recipes based on debounced search query
+  // Filtered recipes based on category filter and debounced search query
   const filteredRecipes = useMemo(() => {
-    if (!debouncedSearchQuery.trim()) {
-      return recipes;
+    let results = recipes;
+
+    // 1. Apply category filter (if any selected)
+    if (selectedCategoryUids.length > 0) {
+      results = results.filter((recipe) =>
+        recipe.categories?.some((cat) => selectedCategoryUids.includes(cat.uid))
+      );
     }
 
-    const query = debouncedSearchQuery.toLowerCase();
-    return recipes.filter((recipe) => recipe._searchText?.includes(query));
-  }, [recipes, debouncedSearchQuery]);
+    // 2. Apply search filter
+    if (debouncedSearchQuery.trim()) {
+      const query = debouncedSearchQuery.toLowerCase();
+      results = results.filter((recipe) => recipe._searchText?.includes(query));
+    }
+
+    return results;
+  }, [recipes, selectedCategoryUids, debouncedSearchQuery]);
 
   // Actions
   const toggleHelp = useCallback(() => {
@@ -131,6 +144,44 @@ export function AppProvider({ children }: AppProviderProps): React.ReactElement 
     setRecipes(indexedRecipes);
   }, []);
 
+  const loadCategories = useCallback((newCategories: Category[]) => {
+    setCategories(newCategories);
+  }, []);
+
+  const toggleCategoryFilter = useCallback(
+    (categoryUid: string) => {
+      // Collect all descendant UIDs for the toggled category
+      const getDescendantUids = (parentUid: string): string[] => {
+        const descendants: string[] = [];
+        for (const cat of categories) {
+          if (cat.parent_uid === parentUid) {
+            descendants.push(cat.uid);
+            descendants.push(...getDescendantUids(cat.uid));
+          }
+        }
+        return descendants;
+      };
+
+      const allUids = [categoryUid, ...getDescendantUids(categoryUid)];
+
+      setSelectedCategoryUids((prev) => {
+        if (prev.includes(categoryUid)) {
+          // Deselect this category and all its descendants
+          return prev.filter((uid) => !allUids.includes(uid));
+        } else {
+          // Select this category and all its descendants
+          const newSet = new Set([...prev, ...allUids]);
+          return [...newSet];
+        }
+      });
+    },
+    [categories]
+  );
+
+  const clearCategoryFilters = useCallback(() => {
+    setSelectedCategoryUids([]);
+  }, []);
+
   // Combine state
   const state: AppState = useMemo(
     () => ({
@@ -141,6 +192,9 @@ export function AppProvider({ children }: AppProviderProps): React.ReactElement 
       recipes,
       filteredRecipes,
       showHelp,
+      categories,
+      selectedCategoryUids,
+      isCategoryFilterActive,
     }),
     [
       activePaneId,
@@ -150,6 +204,9 @@ export function AppProvider({ children }: AppProviderProps): React.ReactElement 
       recipes,
       filteredRecipes,
       showHelp,
+      categories,
+      selectedCategoryUids,
+      isCategoryFilterActive,
     ]
   );
 
@@ -162,8 +219,12 @@ export function AppProvider({ children }: AppProviderProps): React.ReactElement 
       setIsSearchActive,
       toggleHelp,
       loadRecipes,
+      loadCategories,
+      toggleCategoryFilter,
+      clearCategoryFilters,
+      setIsCategoryFilterActive,
     }),
-    [toggleHelp, loadRecipes]
+    [toggleHelp, loadRecipes, loadCategories, toggleCategoryFilter, clearCategoryFilters]
   );
 
   const contextValue = useMemo(() => ({ state, actions }), [state, actions]);

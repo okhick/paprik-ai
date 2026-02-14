@@ -140,6 +140,16 @@ function format(recipe: Recipe): React.JSX.Element[] {
     </Box>
   );
 
+  // Display categories if present
+  if (recipe.categories && recipe.categories.length > 0) {
+    formatted.push(
+      <Box marginBottom={1}>
+        <Text dimColor>Categories: </Text>
+        <Text>{recipe.categories.map((c) => c.name).join(' / ')}</Text>
+      </Box>
+    );
+  }
+
   const metadata: React.JSX.Element[] = [];
   const pushMetadata = (label: string, value: string) => {
     metadata.push(

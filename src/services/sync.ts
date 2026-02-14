@@ -1,7 +1,8 @@
 import { RecipeApi } from '../api/recipes.js';
 import { RecipeRepository } from '../db/repositories/recipes.js';
+import { CategoryRepository } from '../db/repositories/categories.js';
 import { Recipe } from '../types/recipe.js';
-import { PaprikaRecipe } from '../api/types.js';
+import { PaprikaCategory, PaprikaRecipe } from '../api/types.js';
 
 /**
  * Sync status
@@ -11,6 +12,10 @@ export interface SyncStatus {
   synced: number;
   failed: number;
   errors: Array<{ uid: string; error: string }>;
+  categories: {
+    total: number;
+    synced: number;
+  };
 }
 
 /**
@@ -19,8 +24,96 @@ export interface SyncStatus {
 export class SyncService {
   constructor(
     private api: RecipeApi,
-    private repository: RecipeRepository
+    private repository: RecipeRepository,
+    private categoryRepository: CategoryRepository
   ) {}
+
+  /**
+   * Sync categories from API to database
+   */
+  async syncCategories(onProgress?: (status: SyncStatus) => void): Promise<void> {
+    const status: SyncStatus = {
+      total: 0,
+      synced: 0,
+      failed: 0,
+      errors: [],
+      categories: {
+        total: 0,
+        synced: 0,
+      },
+    };
+
+    try {
+      const categories = await this.api.listCategories();
+      status.categories.total = categories.length;
+
+      if (onProgress) {
+        onProgress(status);
+      }
+
+      // Sort categories to insert parents before children
+      const sorted = this.sortCategoriesByDependency(categories);
+
+      for (const category of sorted) {
+        this.categoryRepository.upsert(category);
+        status.categories.synced++;
+
+        if (onProgress) {
+          onProgress({ ...status });
+        }
+      }
+
+      // Clean up deleted categories
+      this.categoryRepository.hardDeleteOutstanding(categories.map((c) => c.uid));
+    } catch (error) {
+      throw new Error(
+        `Failed to sync categories: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  /**
+   * Sort categories so parents come before children
+   * Uses a simple level-order approach
+   */
+  private sortCategoriesByDependency(categories: PaprikaCategory[]): PaprikaCategory[] {
+    const sorted: PaprikaCategory[] = [];
+    const remaining = [...categories];
+    const inserted = new Set<string>();
+
+    // Keep iterating until all categories are inserted
+    let previousLength = remaining.length;
+    while (remaining.length > 0) {
+      // Find categories whose parent is already inserted (or has no parent)
+      const canInsert = remaining.filter((cat) => !cat.parent_uid || inserted.has(cat.parent_uid));
+
+      if (canInsert.length === 0) {
+        // No progress made - we have a cycle or orphaned categories
+        // Just insert the rest anyway (they'll use upsert which is more forgiving)
+        sorted.push(...remaining);
+        break;
+      }
+
+      // Insert these categories
+      for (const cat of canInsert) {
+        sorted.push(cat);
+        inserted.add(cat.uid);
+        const index = remaining.findIndex((c) => c.uid === cat.uid);
+        if (index !== -1) {
+          remaining.splice(index, 1);
+        }
+      }
+
+      // Safety check to prevent infinite loops
+      if (remaining.length === previousLength) {
+        sorted.push(...remaining);
+        break;
+      }
+      previousLength = remaining.length;
+    }
+
+    return sorted;
+  }
 
   /**
    * Sync all recipes from API to database
@@ -31,6 +124,10 @@ export class SyncService {
       synced: 0,
       failed: 0,
       errors: [],
+      categories: {
+        total: 0,
+        synced: 0,
+      },
     };
 
     let recipeList: {
@@ -63,6 +160,14 @@ export class SyncService {
 
         // Upsert to database
         this.repository.upsert(dbRecipe);
+
+        // Sync category links
+        if (apiRecipe.categories && apiRecipe.categories.length > 0) {
+          this.repository.linkCategories(apiRecipe.uid, apiRecipe.categories);
+        } else {
+          // Clear category links if no categories
+          this.repository.linkCategories(apiRecipe.uid, []);
+        }
 
         status.synced++;
 

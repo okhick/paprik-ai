@@ -5,6 +5,7 @@ import {
   PaprikaRecipesListSchema,
   PaprikaRecipeSchema,
   PaprikaCategoriesListSchema,
+  PaprikaCategorySchema,
   PaprikaCategory,
 } from './types.js';
 
@@ -16,6 +17,8 @@ function wrapinResult(schema: z.ZodTypeAny) {
 
 const PaprikaRecipeResponseSchema = wrapinResult(PaprikaRecipeSchema);
 const PaprikaRecipesListResponseSchema = wrapinResult(PaprikaRecipesListSchema);
+const PaprikaCategoriesListResponseSchema = wrapinResult(PaprikaCategoriesListSchema);
+const PaprikaCategoryResponseSchema = wrapinResult(PaprikaCategorySchema);
 
 /**
  * Recipe API methods
@@ -66,16 +69,16 @@ export class RecipeApi {
    * Get list of all categories
    */
   async listCategories(): Promise<PaprikaCategory[]> {
-    const data = await this.client.get('/categories');
-    return PaprikaCategoriesListSchema.parse(data);
+    const data = await this.client.get('/sync/categories');
+    return PaprikaCategoriesListResponseSchema.parse(data).result;
   }
 
   /**
    * Get category details
    */
   async getCategory(uid: string): Promise<PaprikaCategory> {
-    const data = await this.client.get(`/categories/${uid}`);
-    return PaprikaCategoriesListSchema.parse(data)[0];
+    const data = await this.client.get(`/sync/category/${uid}`);
+    return PaprikaCategoryResponseSchema.parse(data).result;
   }
 
   /**

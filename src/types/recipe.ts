@@ -31,13 +31,14 @@ export interface Recipe {
   updated?: Maybe<string>;
   photo_hash?: Maybe<string>;
   photo_large?: Maybe<Buffer>;
+  categories?: Category[]; // Populated when loaded with categories
 }
 
 export interface Category {
   uid: string;
   order_flag?: number;
   name: string;
-  parent_uid?: string;
+  parent_uid?: string | null;
   created?: string;
   updated?: string;
 }
