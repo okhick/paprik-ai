@@ -3,7 +3,7 @@ import { Box, Text, useInput } from 'ink';
 import { useStdout } from 'ink';
 import { useAppState, useAppActions } from './AppContext.js';
 import { Pane } from './Pane.js';
-import { CategoryFilterPane } from './CategoryFilterPane.js';
+import type { FocusPane } from '../../types/tui.js';
 
 /**
  * Minimum supported terminal dimensions
@@ -15,6 +15,8 @@ const MIN_HEIGHT = 24;
  * Props for Layout component
  */
 interface LayoutProps {
+  /** Category pane content (optional, shown when category filter is active) */
+  categoryPane?: React.ReactNode;
   /** Left pane content (recipe list) */
   leftPane: React.ReactNode;
   /** Right pane content (recipe detail) */
@@ -22,17 +24,17 @@ interface LayoutProps {
 }
 
 /**
- * Two-pane layout container with focus management
+ * Layout container with optional 3-pane support
  *
  * Features:
- * - 40/60 split layout between left and right panes
+ * - 2-pane (40/60) when categories hidden, 3-pane (20/30/50) when visible
  * - Terminal dimension detection with useStdout
  * - Minimum terminal size enforcement (80x24)
- * - Automatic resize handling
  * - Visual focus indicators
  * - Global keyboard navigation (Tab, Shift+Tab, Left/Right arrows)
+ * - Press 'c' to toggle category pane
  */
-export function Layout({ leftPane, rightPane }: LayoutProps): React.ReactElement {
+export function Layout({ categoryPane, leftPane, rightPane }: LayoutProps): React.ReactElement {
   const { stdout } = useStdout();
   const state = useAppState();
   const actions = useAppActions();
@@ -61,13 +63,32 @@ export function Layout({ leftPane, rightPane }: LayoutProps): React.ReactElement
   // Check if terminal meets minimum size
   const isTooSmall = terminalWidth < MIN_WIDTH || terminalHeight < MIN_HEIGHT;
 
-  // Calculate pane dimensions (40/60 split)
-  const leftPaneWidth = Math.floor(terminalWidth * 0.4);
-  const rightPaneWidth = terminalWidth - leftPaneWidth;
+  // Calculate pane dimensions based on whether categories are visible
+  const categoryPaneWidth = isCategoryFilterActive ? Math.floor(terminalWidth * 0.2) : 0;
+  const remainingWidth = terminalWidth - categoryPaneWidth;
+  const listPaneWidth = isCategoryFilterActive
+    ? Math.floor(remainingWidth * 0.375) // ~30% of total
+    : Math.floor(terminalWidth * 0.4);
+  const detailPaneWidth = remainingWidth - listPaneWidth;
 
-  // Reserve 1 row for status bar at the bottom
+  // Reserve rows for status bar at the bottom
   const statusBarHeight = 2;
   const paneHeight = terminalHeight - statusBarHeight;
+
+  // Pane order for tab navigation
+  const visiblePanes: FocusPane[] = isCategoryFilterActive
+    ? ['categories', 'list', 'detail']
+    : ['list', 'detail'];
+
+  const nextPane = (current: FocusPane): FocusPane => {
+    const idx = visiblePanes.indexOf(current);
+    return visiblePanes[(idx + 1) % visiblePanes.length];
+  };
+
+  const prevPane = (current: FocusPane): FocusPane => {
+    const idx = visiblePanes.indexOf(current);
+    return visiblePanes[(idx - 1 + visiblePanes.length) % visiblePanes.length];
+  };
 
   // Global keyboard shortcuts
   useInput(
@@ -89,18 +110,54 @@ export function Layout({ leftPane, rightPane }: LayoutProps): React.ReactElement
         return;
       }
 
-      // Don't process other keys when help or category filter is showing
-      if (showHelp || isCategoryFilterActive) {
+      // Don't process other keys when help is showing
+      if (showHelp) {
         return;
       }
 
-      // 'c' - Open category filter (when list pane focused, not searching)
-      if (input === 'c' && activePaneId === 'list' && !isSearchActive) {
-        setIsCategoryFilterActive(true);
+      // Don't process keys handled by category pane when it's focused
+      if (activePaneId === 'categories') {
+        // 'c' - Close category pane
+        if (input === 'c') {
+          setIsCategoryFilterActive(false);
+          setActivePaneId('list');
+          return;
+        }
+
+        // Tab: cycle focus forward
+        if (key.tab && !key.shift) {
+          setActivePaneId(nextPane(activePaneId));
+          return;
+        }
+
+        // Shift+Tab: cycle focus backward
+        if (key.tab && key.shift) {
+          setActivePaneId(prevPane(activePaneId));
+          return;
+        }
+
+        // Right arrow: move to list pane
+        if (key.rightArrow) {
+          setActivePaneId('list');
+          return;
+        }
+
         return;
       }
 
-      // 'x' - Clear category filters (quick clear)
+      // 'c' - Toggle category filter pane (when not searching)
+      if (input === 'c' && !isSearchActive) {
+        if (isCategoryFilterActive) {
+          setIsCategoryFilterActive(false);
+          setActivePaneId('list');
+        } else {
+          setIsCategoryFilterActive(true);
+          setActivePaneId('categories');
+        }
+        return;
+      }
+
+      // 'x' - Clear category filters (quick clear from list pane)
       if (input === 'x' && activePaneId === 'list' && selectedCategoryUids.length > 0) {
         clearCategoryFilters();
         return;
@@ -149,37 +206,38 @@ export function Layout({ leftPane, rightPane }: LayoutProps): React.ReactElement
 
       // Tab: cycle focus forward
       if (key.tab && !key.shift) {
-        setActivePaneId(activePaneId === 'list' ? 'detail' : 'list');
+        setActivePaneId(nextPane(activePaneId));
         return;
       }
 
       // Shift+Tab: cycle focus backward
       if (key.tab && key.shift) {
-        setActivePaneId(activePaneId === 'detail' ? 'list' : 'detail');
+        setActivePaneId(prevPane(activePaneId));
         return;
       }
 
-      // Left arrow: focus left pane (only when not navigating lists)
-      if (key.leftArrow && activePaneId !== 'list') {
-        setActivePaneId('list');
-        return;
+      // Left arrow: focus previous pane
+      if (key.leftArrow) {
+        if (activePaneId === 'detail') {
+          setActivePaneId('list');
+          return;
+        }
+        if (activePaneId === 'list' && isCategoryFilterActive) {
+          setActivePaneId('categories');
+          return;
+        }
       }
 
-      // Right arrow: focus right pane (only when not navigating lists)
-      if (key.rightArrow && activePaneId !== 'detail') {
-        setActivePaneId('detail');
-        return;
+      // Right arrow: focus next pane
+      if (key.rightArrow) {
+        if (activePaneId === 'list') {
+          setActivePaneId('detail');
+          return;
+        }
       }
-
-      // Note: Up/Down, Page Up/Down, Home/End navigation for list and detail panes
-      // will be handled by the RecipeListPane and RecipeDetailPane components themselves
-      // as they need access to scroll state and selection state
     },
     { isActive: true }
   );
-
-  // Handle terminal resize: terminal dimensions automatically update via useStdout
-  // No additional handling needed - React will re-render with new dimensions
 
   if (isTooSmall) {
     return <TooSmallBox width={terminalHeight} height={terminalWidth} />;
@@ -187,21 +245,30 @@ export function Layout({ leftPane, rightPane }: LayoutProps): React.ReactElement
   if (showHelp) {
     return <HelpBox width={terminalWidth} height={terminalHeight} />;
   }
-  if (isCategoryFilterActive) {
-    return <CategoryFilterPane width={terminalWidth} height={terminalHeight} />;
-  }
 
-  // Render two-pane layout
+  // Render layout
   return (
     <Box width={terminalWidth} height={terminalHeight} flexDirection="column">
       <Box width={terminalWidth} height={paneHeight}>
-        {/* Left pane (Recipe List) */}
-        <Pane isFocused={activePaneId === 'list'} width={leftPaneWidth} height={paneHeight}>
+        {/* Category pane (optional) */}
+        {isCategoryFilterActive && categoryPane && (
+          <Pane
+            isFocused={activePaneId === 'categories'}
+            width={categoryPaneWidth}
+            height={paneHeight}
+            title="Categories"
+          >
+            {categoryPane}
+          </Pane>
+        )}
+
+        {/* List pane (Recipe List) */}
+        <Pane isFocused={activePaneId === 'list'} width={listPaneWidth} height={paneHeight}>
           {leftPane}
         </Pane>
 
-        {/* Right pane (Recipe Detail) */}
-        <Pane isFocused={activePaneId === 'detail'} width={rightPaneWidth} height={paneHeight}>
+        {/* Detail pane (Recipe Detail) */}
+        <Pane isFocused={activePaneId === 'detail'} width={detailPaneWidth} height={paneHeight}>
           {rightPane}
         </Pane>
       </Box>
@@ -281,8 +348,17 @@ function HelpBox({ width, height }: { width: number; height: number }) {
         <Text> Page Up/Down - Page through list</Text>
         <Text> Home/End - Jump to first/last recipe</Text>
         <Text> / - Activate search</Text>
-        <Text> c - Filter by category</Text>
+        <Text> c - Toggle category pane</Text>
         <Text> x - Clear category filters</Text>
+      </Box>
+      <Box marginTop={1} flexDirection="column">
+        <Text bold color="cyan">
+          Categories
+        </Text>
+        <Text> Up/Down - Navigate categories</Text>
+        <Text> Space/Enter - Toggle selection</Text>
+        <Text> x - Clear all filters</Text>
+        <Text> Esc - Close category pane</Text>
       </Box>
       <Box marginTop={1} flexDirection="column">
         <Text bold color="cyan">
