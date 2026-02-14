@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Text, useInput, useStdout } from 'ink';
 import { useAppState } from './AppContext.js';
-import type { Recipe } from '../../types/recipe.js';
+import type { Recipe, Category } from '../../types/recipe.js';
 import { ScrollView, ScrollViewRef } from 'ink-scroll-view';
 import { ScrollBar } from '@byteland/ink-scroll-bar';
 import { hasContent, isSectionHeader, splitLinesPreservingInternal } from '../../utils/text.js';
@@ -16,7 +16,7 @@ import { parseMarkdownText, TrimLeadingWhitespace } from '../../utils/text-compo
 export function RecipeDetailPane(): React.ReactElement {
   const state = useAppState();
   const { stdout } = useStdout();
-  const { recipes, selectedRecipeId, activePaneId } = state;
+  const { recipes, selectedRecipeId, activePaneId, categories: allCategories } = state;
 
   const scrollRef = useRef<ScrollViewRef>(null);
 
@@ -81,8 +81,8 @@ export function RecipeDetailPane(): React.ReactElement {
     if (selectedRecipe == null) {
       return [];
     }
-    return format(selectedRecipe);
-  }, [selectedRecipe]);
+    return format(selectedRecipe, allCategories);
+  }, [selectedRecipe, allCategories]);
 
   // Update scrollbar metrics after content renders
   // Note: We need to defer this slightly because ScrollView measures content asynchronously
@@ -124,7 +124,26 @@ export function RecipeDetailPane(): React.ReactElement {
   );
 }
 
-function format(recipe: Recipe): React.JSX.Element[] {
+/**
+ * Build the full path for a category by walking up parent_uid references.
+ * Returns names from root to leaf, e.g. ["Dinner", "Italian", "Pasta"].
+ */
+function getCategoryPath(category: Category, allCategories: Category[]): string[] {
+  const path: string[] = [];
+  const categoryMap = new Map(allCategories.map((c) => [c.uid, c]));
+  const visited = new Set<string>();
+  let current: Category | undefined = category;
+
+  while (current && !visited.has(current.uid)) {
+    visited.add(current.uid);
+    path.unshift(current.name);
+    current = current.parent_uid ? categoryMap.get(current.parent_uid) : undefined;
+  }
+
+  return path;
+}
+
+function format(recipe: Recipe, allCategories: Category[]): React.JSX.Element[] {
   const formatted = [];
 
   const boxDivider = {
@@ -140,12 +159,21 @@ function format(recipe: Recipe): React.JSX.Element[] {
     </Box>
   );
 
-  // Display categories if present
+  // Display categories if present, showing full parent > child paths
   if (recipe.categories && recipe.categories.length > 0) {
+    const categoryPaths = recipe.categories.map((c) =>
+      getCategoryPath(c, allCategories).join(' / ')
+    );
+    // Remove paths that are a prefix of a longer path (e.g. "Dinner" when "Dinner > Italian" exists)
+    const dedupedPaths = categoryPaths.filter(
+      (path) => !categoryPaths.some((other) => other !== path && other.startsWith(path + ' / '))
+    );
     formatted.push(
-      <Box marginBottom={1}>
-        <Text dimColor>Categories: </Text>
-        <Text>{recipe.categories.map((c) => c.name).join(' / ')}</Text>
+      <Box flexDirection="column" marginBottom={1}>
+        <Text dimColor>Categories</Text>
+        {...dedupedPaths.map((path) => (
+          <Text>  {path}</Text>
+        ))}
       </Box>
     );
   }
