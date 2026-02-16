@@ -45,11 +45,13 @@ export function SearchBar(): React.ReactElement {
       {/* Category filters */}
       {selectedCategoryUids.length > 0 && (
         <Box marginTop={0}>
-          <Text color="cyan" bold>
-            Categories:{' '}
+          <Text wrap="wrap">
+            <Text color="cyan" bold>
+              Categories:{' '}
+            </Text>
+            {selectedCategoryNames.join(', ')}
+            <Text dimColor> (x to clear)</Text>
           </Text>
-          <Text>{selectedCategoryNames.join(', ')}</Text>
-          <Text dimColor> (x to clear)</Text>
         </Box>
       )}
 

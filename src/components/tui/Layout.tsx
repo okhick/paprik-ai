@@ -93,28 +93,24 @@ export function Layout({ categoryPane, leftPane, rightPane }: LayoutProps): Reac
   // Global keyboard shortcuts
   useInput(
     (input, key) => {
-      // Quit with Ctrl+C
-      if (key.ctrl && input === 'c') {
+      // Quit with Ctrl+C or 'q' (always available)
+      if ((key.ctrl && input === 'c') || input === 'q') {
         process.exit(0);
       }
-
       // Help overlay
       if (input === '?') {
         toggleHelp();
         return;
       }
-
       // Close help with Escape
       if (showHelp && key.escape) {
         toggleHelp();
         return;
       }
-
       // Don't process other keys when help is showing
       if (showHelp) {
         return;
       }
-
       // Don't process keys handled by category pane when it's focused
       if (activePaneId === 'categories') {
         // 'c' - Close category pane
@@ -123,19 +119,16 @@ export function Layout({ categoryPane, leftPane, rightPane }: LayoutProps): Reac
           setActivePaneId('list');
           return;
         }
-
         // Tab: cycle focus forward
         if (key.tab && !key.shift) {
           setActivePaneId(nextPane(activePaneId));
           return;
         }
-
         // Shift+Tab: cycle focus backward
         if (key.tab && key.shift) {
           setActivePaneId(prevPane(activePaneId));
           return;
         }
-
         // Right arrow: move to list pane
         if (key.rightArrow) {
           setActivePaneId('list');
@@ -187,10 +180,6 @@ export function Layout({ categoryPane, leftPane, rightPane }: LayoutProps): Reac
         return;
       }
 
-      // Quit with 'q' (only when not in search mode)
-      if (input === 'q') {
-        process.exit(0);
-      }
 
       // Activate search with '/' (when list pane focused)
       if (input === '/' && activePaneId === 'list') {
