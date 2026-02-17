@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { RecipeForm } from '../components/RecipeForm.js';
 import { ErrorBox, LoadingBox } from '../components/Layout.js';
 import { Recipe } from '../types/recipe.js';
-import { RecipeService } from '../services/recipe.js';
 import { RecipeRepository } from '../db/repositories/recipes.js';
 import { getDatabase } from '../db/index.js';
 import { getConfig } from '../utils/config.js';
@@ -34,13 +33,19 @@ export default class Add extends Command {
     // Initialize database
     const db = getDatabase(config.databasePath);
     const repository = new RecipeRepository(db);
-    const service = new RecipeService(repository);
 
     // If name is provided via flag, create directly
     if (flags.name) {
-      const recipe = await service.createRecipe({
+      const recipe = repository.create({
+        uid: crypto.randomUUID(),
         name: flags.name,
         description: flags.description,
+        rating: 0,
+        in_trash: false,
+        on_favorites: false,
+        on_grocery_list: false,
+        created: new Date().toISOString(),
+        updated: new Date().toISOString(),
       });
 
       this.log(`✓ Recipe created: ${recipe.name} (${recipe.uid})`);
@@ -48,7 +53,7 @@ export default class Add extends Command {
     }
 
     // Otherwise, show interactive form
-    render(<AddApp service={service} />);
+    render(<AddApp repository={repository} />);
   }
 }
 
@@ -56,10 +61,10 @@ export default class Add extends Command {
  * Add app component
  */
 interface AddAppProps {
-  service: RecipeService;
+  repository: RecipeRepository;
 }
 
-const AddApp: React.FC<AddAppProps> = ({ service }) => {
+const AddApp: React.FC<AddAppProps> = ({ repository }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -70,7 +75,29 @@ const AddApp: React.FC<AddAppProps> = ({ service }) => {
     setError(null);
 
     try {
-      const recipe = await service.createRecipe(data);
+      const recipe = repository.create({
+        uid: crypto.randomUUID(),
+        name: data.name || 'Untitled Recipe',
+        ingredients: data.ingredients,
+        directions: data.directions,
+        description: data.description,
+        notes: data.notes,
+        nutritional_info: data.nutritional_info,
+        servings: data.servings,
+        prep_time: data.prep_time,
+        cook_time: data.cook_time,
+        total_time: data.total_time,
+        difficulty: data.difficulty,
+        rating: data.rating || 0,
+        source: data.source,
+        source_url: data.source_url,
+        image_url: data.image_url,
+        in_trash: false,
+        on_favorites: data.on_favorites || false,
+        on_grocery_list: data.on_grocery_list || false,
+        created: new Date().toISOString(),
+        updated: new Date().toISOString(),
+      });
       setCreatedRecipe(recipe);
       setSuccess(true);
       setLoading(false);

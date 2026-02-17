@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { RecipeForm } from '../components/RecipeForm.js';
 import { ErrorBox, LoadingBox } from '../components/Layout.js';
 import { Recipe } from '../types/recipe.js';
-import { RecipeService } from '../services/recipe.js';
 import { RecipeRepository } from '../db/repositories/recipes.js';
 import { getDatabase } from '../db/index.js';
 import { getConfig } from '../utils/config.js';
@@ -47,10 +46,9 @@ export default class Edit extends Command {
     // Initialize database
     const db = getDatabase(config.databasePath);
     const repository = new RecipeRepository(db);
-    const service = new RecipeService(repository);
 
     // Check if recipe exists
-    const recipe = await service.getRecipe(args.uid);
+    const recipe = repository.getByUid(args.uid);
     if (!recipe) {
       this.error(`Recipe not found: ${args.uid}`);
     }
@@ -62,7 +60,7 @@ export default class Edit extends Command {
       if (flags.description) updates.description = flags.description;
       if (flags.rating !== undefined) updates.rating = flags.rating;
 
-      const updated = await service.updateRecipe(args.uid, updates);
+      const updated = repository.update(args.uid, updates);
       if (updated) {
         this.log(`✓ Recipe updated: ${updated.name}`);
       } else {
@@ -72,7 +70,7 @@ export default class Edit extends Command {
     }
 
     // Otherwise, show interactive form
-    render(<EditApp service={service} uid={args.uid} />);
+    render(<EditApp repository={repository} uid={args.uid} />);
   }
 }
 
@@ -80,11 +78,11 @@ export default class Edit extends Command {
  * Edit app component
  */
 interface EditAppProps {
-  service: RecipeService;
+  repository: RecipeRepository;
   uid: string;
 }
 
-const EditApp: React.FC<EditAppProps> = ({ service, uid }) => {
+const EditApp: React.FC<EditAppProps> = ({ repository, uid }) => {
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -94,7 +92,7 @@ const EditApp: React.FC<EditAppProps> = ({ service, uid }) => {
   useEffect(() => {
     const loadRecipe = async () => {
       try {
-        const loadedRecipe = await service.getRecipe(uid);
+        const loadedRecipe = repository.getByUid(uid);
         if (!loadedRecipe) {
           setError(`Recipe not found: ${uid}`);
         } else {
@@ -108,14 +106,14 @@ const EditApp: React.FC<EditAppProps> = ({ service, uid }) => {
     };
 
     loadRecipe();
-  }, [service, uid]);
+  }, [repository, uid]);
 
   const handleSubmit = async (data: Partial<Recipe>) => {
     setSaving(true);
     setError(null);
 
     try {
-      const updated = await service.updateRecipe(uid, data);
+      const updated = repository.update(uid, data);
       if (updated) {
         setRecipe(updated);
         setSuccess(true);
