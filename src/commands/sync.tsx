@@ -59,25 +59,30 @@ const SyncApp: React.FC<SyncAppProps> = ({ syncService }) => {
     const performSync = async () => {
       try {
         // First sync categories
+        let categoryCounts = { total: 0, synced: 0 };
         await syncService.syncCategories((progress) => {
           setStatus(progress);
+          categoryCounts = { ...progress.categories };
         });
 
-        // Then sync recipes
+        // Then sync recipes, preserving category counts
         const finalStatus = await syncService.syncRecipes((progress) => {
-          setStatus(progress);
+          setStatus({
+            ...progress,
+            categories: categoryCounts,
+          });
         });
 
-        setStatus(finalStatus);
+        setStatus({
+          ...finalStatus,
+          categories: categoryCounts,
+        });
         setComplete(true);
-
-        // Exit after showing results
         setTimeout(() => process.exit(0), 3000);
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
       }
     };
-
     performSync();
   }, [syncService]);
 

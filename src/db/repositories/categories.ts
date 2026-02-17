@@ -86,12 +86,22 @@ export class CategoryRepository {
   hardDeleteOutstanding(uids: string[]): boolean {
     if (uids.length === 0) {
       // If no UIDs provided, delete all categories
+      // First orphan all children to avoid foreign key constraint violations
+      this.db.prepare('UPDATE categories SET parent_uid = NULL WHERE parent_uid IS NOT NULL').run();
       const result = this.db.prepare('DELETE FROM categories').run();
       return result.changes > 0;
     }
 
-    // Create one placeholder for each UID
+    // Orphan children whose parents are about to be deleted (i.e., NOT IN the keep list)
+    // Create placeholders for the UIDs we're keeping
     const placeholders = uids.map(() => '?').join(',');
+    this.db
+      .prepare(
+        `UPDATE categories SET parent_uid = NULL WHERE parent_uid IS NOT NULL AND parent_uid NOT IN (${placeholders})`
+      )
+      .run(...uids);
+
+    // Now delete categories not in the keep list
     const result = this.db
       .prepare(`DELETE FROM categories WHERE uid NOT IN (${placeholders})`)
       .run(...uids);

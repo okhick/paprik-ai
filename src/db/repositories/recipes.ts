@@ -284,7 +284,22 @@ export class RecipeRepository {
       `);
 
       for (const categoryUid of categoryUids) {
-        stmt.run(recipeUid, categoryUid);
+        try {
+          stmt.run(recipeUid, categoryUid);
+        } catch (error: unknown) {
+          // Handle foreign key constraint violations gracefully
+          const isConstraintError =
+            error instanceof Error &&
+            (error.message?.includes('FOREIGN KEY constraint failed') ||
+              ('code' in error && error.code === 'SQLITE_CONSTRAINT_FOREIGNKEY'));
+          if (isConstraintError) {
+            console.warn(
+              `Failed to link recipe ${recipeUid} to category ${categoryUid}: category does not exist`
+            );
+          } else {
+            throw error;
+          }
+        }
       }
     }
   }

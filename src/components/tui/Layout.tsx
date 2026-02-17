@@ -180,7 +180,6 @@ export function Layout({ categoryPane, leftPane, rightPane }: LayoutProps): Reac
         return;
       }
 
-
       // Activate search with '/' (when list pane focused)
       if (input === '/' && activePaneId === 'list') {
         setIsSearchActive(true);
@@ -229,7 +228,7 @@ export function Layout({ categoryPane, leftPane, rightPane }: LayoutProps): Reac
   );
 
   if (isTooSmall) {
-    return <TooSmallBox width={terminalHeight} height={terminalWidth} />;
+    return <TooSmallBox width={terminalWidth} height={terminalHeight} />;
   }
   if (showHelp) {
     return <HelpBox width={terminalWidth} height={terminalHeight} />;

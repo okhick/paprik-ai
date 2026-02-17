@@ -359,7 +359,30 @@ When making changes:
 5. **Documentation**: Update README.md and this file as needed
 6. **Formatting**: Run `npm run format` before committing
 7. **Linting**: Fix all `npm run lint` errors
+8. **Type Checking**: Run `npm run typecheck` after TypeScript changes to catch type errors
+9. **LSP Diagnostics**: For AI assistants, run LSP diagnostics after edits to verify correctness
 
+## Verification Workflow
+
+After making TypeScript changes, **always verify** with these steps:
+
+```bash
+# 1. Type checking (catches type errors that tsc might emit as JS)
+npm run typecheck
+
+# 2. Linting (catches style issues and code quality problems)
+npm run lint
+
+# 3. Build (generates JS output)
+npm run build
+
+# 4. Tests (if applicable)
+npm test
+```
+
+**For AI Assistants**: After editing TypeScript files, run LSP diagnostics to catch type errors immediately:
+- Use `lsp diagnostics` action to verify changes before claiming success
+- `npm run build` may succeed even with type errors; use `npm run typecheck` or LSP for strict validation
 ## Contact
 
 **Author**: Oliver Hickman

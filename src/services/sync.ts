@@ -165,7 +165,7 @@ export class SyncService {
         if (apiRecipe.categories && apiRecipe.categories.length > 0) {
           this.repository.linkCategories(apiRecipe.uid, apiRecipe.categories);
         } else {
-          // Clear category links if no categories
+          // Clear category links if no categories or null
           this.repository.linkCategories(apiRecipe.uid, []);
         }
 
@@ -175,7 +175,6 @@ export class SyncService {
           onProgress({ ...status });
         }
       } catch (error) {
-        status.synced++;
         status.failed++;
         status.errors.push({
           uid: item.uid,
