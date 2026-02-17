@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import Database from 'better-sqlite3';
-import { RecipeRepository } from '../src/lib/db/repositories/recipes.js';
+import { RecipeRepository } from '../src/lib/repositories/recipes.js';
 import { SCHEMA_SQL } from '../src/lib/db/schema.js';
 import type { Recipe } from '../src/types/recipe.js';
 

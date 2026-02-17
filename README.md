@@ -56,106 +56,19 @@ cp .env.example .env
 
 ## Usage
 
-### New TUI Interface (Recommended)
+### TUI Interface
 
-Launch the full-screen interactive TUI (the default when running without arguments):
-
-```bash
-./dist/index.js
-```
-
-Or explicitly run the TUI command:
+Launch the full-screen interactive TUI:
 
 ```bash
 ./dist/index.js tui
 ```
 
-The TUI provides a two-pane layout:
+The TUI provides a three-pane layout:
 
-- Left pane: List of recipes with search and filter options
-- Right pane: Detailed view of the selected recipe
-
-#### TUI Keyboard Shortcuts
-
-**Global Navigation:**
-
-- `Tab` / `Shift+Tab`: Switch between panes
-- `←` / `→` (Left/Right arrows): Focus left/right pane
-- `q`: Quit application
-- `?`: Toggle help overlay
-- `Ctrl+C`: Exit
-
-**Recipe List (Left Pane):**
-
-- `↑` / `↓` (Up/Down arrows): Navigate through recipes
-- `Page Up` / `Page Down`: Page through recipe list
-- `/`: Activate search mode (type to filter recipes)
-- `Escape` (when searching): Clear search or exit search mode
-- `f`: Toggle favorites filter
-
-**Recipe Detail (Right Pane):**
-
-- `↑` / `↓` (Up/Down arrows): Scroll recipe content
-- `Page Up` / `Page Down`: Page through recipe content
-
-### Browse Recipes
-
-> ⚠️ The following commands are being phased out in favor of the new TUI interface.
-
-Browse all recipes:
-
-```bash
-./dist/index.js browse
-```
-
-Browse only favorites:
-
-```bash
-./dist/index.js browse --favorites
-```
-
-Browse highly-rated recipes:
-
-```bash
-./dist/index.js browse --min-rating 4
-```
-
-### Search Recipes
-
-Search for recipes by name:
-
-```bash
-./dist/index.js search "chocolate"
-```
-
-### Add a Recipe
-
-Add a recipe interactively:
-
-```bash
-./dist/index.js add
-```
-
-Add a recipe with flags:
-
-```bash
-./dist/index.js add --name "My Recipe" --description "A delicious recipe"
-```
-
-### Edit a Recipe
-
-Edit a recipe interactively:
-
-```bash
-./dist/index.js edit <recipe-uid>
-```
-
-Update specific fields:
-
-```bash
-./dist/index.js edit <recipe-uid> --name "Updated Name" --rating 5
-```
-
+- **Left pane**: Category filter (hierarchical tree)
+- **Center pane**: List of recipes with search and filter options  
+- **Right pane**: Detailed view of the selected recipe
 ### Sync from Paprika
 
 Sync all recipes from your Paprika account:
@@ -163,22 +76,6 @@ Sync all recipes from your Paprika account:
 ```bash
 ./dist/index.js sync
 ```
-
-## Keyboard Navigation
-
-### TUI Interface
-
-See the "TUI Keyboard Shortcuts" section above.
-
-### Recipe List
-
-- `↑/↓` - Navigate through recipes
-- `Enter` - View recipe details
-- `q` - Quit
-
-### Recipe Detail
-
-- `q` - Back to list
 
 ## Development
 
@@ -193,23 +90,24 @@ See the "TUI Keyboard Shortcuts" section above.
 - `npm run format` - Format code with Prettier
 
 ### Project Structure
-
 ```
 paprik-ai/
 ├── src/
-│   ├── commands/           # CLI commands (browse, search, add, edit, sync)
-│   ├── components/         # Ink TUI components
-│   ├── api/                # Paprika API client
-│   ├── db/                 # SQLite database layer
-│   │   ├── repositories/   # Data access objects
-│   │   ├── migrations/     # Database migrations
-│   │   └── schema.ts       # Table schemas
-│   ├── services/           # Business logic
-│   ├── utils/              # Utilities (config, etc.)
-│   └── types/              # TypeScript type definitions
-├── test/                   # Test files
-├── .data/                  # SQLite database (created after sync)
-└── dist/                   # Compiled output
+│   ├── commands/           # CLI commands (sync, tui)
+│   ├── components/         # React/Ink UI components
+│   │   ├── tui/           # TUI-specific components
+│   │   └── ui.tsx         # Shared primitives (Layout, ErrorBox, LoadingBox)
+│   ├── lib/               # Business logic & infrastructure
+│   │   ├── api/           # Paprika API client
+│   │   ├── db/            # SQLite database, schema, validators
+│   │   ├── repositories/  # Data access layer
+│   │   ├── services/      # Business logic (sync service)
+│   │   └── config.ts      # Configuration
+│   ├── hooks/             # React hooks
+│   ├── types/             # TypeScript type definitions
+│   └── utils/             # Pure utility functions
+├── test/                  # Test files
+└── dist/                  # Compiled output
 ```
 
 ## Database
@@ -218,7 +116,7 @@ The application uses SQLite for local storage:
 
 - **Location**: `.data/recipes.db` (configurable via `DATABASE_PATH` env var)
 - **Schema**: Mirrors Paprika's data structure
-- **Tables**: recipes, categories, meals, grocery_lists, etc.
+- **Tables**: recipes, categories, recipe_categories, sync_metadata
 
 ## API
 
@@ -249,57 +147,6 @@ Configuration is loaded from environment variables or a `.env` file:
 
 ## Troubleshooting
 
-## Migrating to the New TUI Interface
-
-### What's New
-
-The new pane-based TUI interface offers several advantages over the command-based approach:
-
-1. **Seamless Experience**: Full-screen interface with multiple panes visible simultaneously
-2. **Persistent State**: No need to re-run commands for different operations
-3. **Keyboard-Driven**: Comprehensive shortcuts for navigation and actions
-4. **Real-Time Search**: Filter as you type with debounced search
-5. **Performance Optimizations**: Virtual scrolling for large recipe collections
-6. **Rich Formatting**: Better recipe presentation with visual sections and icons
-
-### Migration Steps
-
-1. **Update to the latest version**:
-
-   ```bash
-   git pull
-   npm install
-   npm run build
-   ```
-
-2. **Launch the new TUI**:
-
-   ```bash
-   ./dist/index.js
-   ```
-
-3. **Learn the keyboard shortcuts**:
-   Press `?` in the TUI to view all available shortcuts.
-
-### Command Mapping
-
-| Old Command          | New TUI Equivalent                |
-| -------------------- | --------------------------------- |
-| `browse`             | Just launch the TUI               |
-| `browse --favorites` | Launch TUI, then press `f`        |
-| `search "query"`     | Launch TUI, press `/`, type query |
-| `edit`               | Coming in a future update         |
-
-### Rollback If Needed
-
-If you encounter issues with the new TUI, you can still use the old commands:
-
-```bash
-./dist/index.js browse
-./dist/index.js search "query"
-```
-
-These commands will continue to work but will display a deprecation warning.
 
 ## Troubleshooting the TUI
 

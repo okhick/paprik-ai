@@ -1,7 +1,7 @@
 import type Database from 'better-sqlite3';
-import { getDatabase } from '../index.js';
-import type { Category } from '../../../types/recipe.js';
-import { parseCategory, parseCategories } from '../schema-validators.js';
+import { getDatabase } from '../db/index.js';
+import type { Category } from '../../types/recipe.js';
+import { parseCategory, parseCategories } from '../db/schema-validators.js';
 
 /**
  * Category repository for database operations
