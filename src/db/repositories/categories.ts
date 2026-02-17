@@ -1,6 +1,7 @@
 import type Database from 'better-sqlite3';
 import { getDatabase } from '../index.js';
 import type { Category } from '../../types/recipe.js';
+import { parseCategory, parseCategories } from '../schema-validators.js';
 
 /**
  * Category repository for database operations
@@ -16,18 +17,17 @@ export class CategoryRepository {
    * Get all categories
    */
   getAll(): Category[] {
-    return this.db
-      .prepare('SELECT * FROM categories ORDER BY order_flag, name COLLATE NOCASE')
-      .all() as Category[];
+    return parseCategories(
+      this.db.prepare('SELECT * FROM categories ORDER BY order_flag, name COLLATE NOCASE').all()
+    );
   }
 
   /**
    * Get category by UID
    */
   getByUid(uid: string): Category | undefined {
-    return this.db.prepare('SELECT * FROM categories WHERE uid = ?').get(uid) as
-      | Category
-      | undefined;
+    const row = this.db.prepare('SELECT * FROM categories WHERE uid = ?').get(uid);
+    return row ? parseCategory(row) : undefined;
   }
 
   /**
@@ -113,16 +113,18 @@ export class CategoryRepository {
    * Get categories for a specific recipe
    */
   getByRecipe(recipeUid: string): Category[] {
-    return this.db
-      .prepare(
-        `
+    return parseCategories(
+      this.db
+        .prepare(
+          `
       SELECT c.* FROM categories c
       JOIN recipe_categories rc ON c.uid = rc.category_uid
       WHERE rc.recipe_uid = ?
       ORDER BY c.order_flag, c.name COLLATE NOCASE
     `
-      )
-      .all(recipeUid) as Category[];
+        )
+        .all(recipeUid)
+    );
   }
 
   /**

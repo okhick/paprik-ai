@@ -1,6 +1,7 @@
 import type Database from 'better-sqlite3';
 import { getDatabase } from '../index.js';
 import type { Recipe } from '../../types/recipe.js';
+import { parseRecipe, parseRecipes } from '../schema-validators.js';
 
 /**
  * Recipe repository for database operations
@@ -53,14 +54,15 @@ export class RecipeRepository {
       ? 'SELECT * FROM recipes ORDER BY name COLLATE NOCASE'
       : 'SELECT * FROM recipes WHERE in_trash = 0 ORDER BY name COLLATE NOCASE';
 
-    return this.db.prepare(query).all() as Recipe[];
+    return parseRecipes(this.db.prepare(query).all());
   }
 
   /**
    * Get recipe by UID
    */
   getByUid(uid: string): Recipe | undefined {
-    return this.db.prepare('SELECT * FROM recipes WHERE uid = ?').get(uid) as Recipe | undefined;
+    const row = this.db.prepare('SELECT * FROM recipes WHERE uid = ?').get(uid);
+    return row ? parseRecipe(row) : undefined;
   }
 
   /**
@@ -72,7 +74,7 @@ export class RecipeRepository {
       ? 'SELECT * FROM recipes WHERE name LIKE ? COLLATE NOCASE ORDER BY name'
       : 'SELECT * FROM recipes WHERE name LIKE ? COLLATE NOCASE AND in_trash = 0 ORDER BY name';
 
-    return this.db.prepare(sql).all(searchPattern) as Recipe[];
+    return parseRecipes(this.db.prepare(sql).all(searchPattern));
   }
 
   /**
@@ -83,16 +85,18 @@ export class RecipeRepository {
       ? 'SELECT * FROM recipes WHERE rating >= ? ORDER BY rating DESC, name'
       : 'SELECT * FROM recipes WHERE rating >= ? AND in_trash = 0 ORDER BY rating DESC, name';
 
-    return this.db.prepare(sql).all(minRating) as Recipe[];
+    return parseRecipes(this.db.prepare(sql).all(minRating));
   }
 
   /**
    * Get favorite recipes
    */
   getFavorites(): Recipe[] {
-    return this.db
-      .prepare('SELECT * FROM recipes WHERE on_favorites = 1 AND in_trash = 0 ORDER BY name')
-      .all() as Recipe[];
+    return parseRecipes(
+      this.db
+        .prepare('SELECT * FROM recipes WHERE on_favorites = 1 AND in_trash = 0 ORDER BY name')
+        .all()
+    );
   }
 
   /**
@@ -234,16 +238,18 @@ export class RecipeRepository {
    * Get recipes by category
    */
   getByCategory(categoryUid: string): Recipe[] {
-    return this.db
-      .prepare(
-        `
+    return parseRecipes(
+      this.db
+        .prepare(
+          `
       SELECT r.* FROM recipes r
       JOIN recipe_categories rc ON r.uid = rc.recipe_uid
       WHERE rc.category_uid = ? AND r.in_trash = 0
       ORDER BY r.name COLLATE NOCASE
     `
-      )
-      .all(categoryUid) as Recipe[];
+        )
+        .all(categoryUid)
+    );
   }
 
   /**
@@ -313,15 +319,17 @@ export class RecipeRepository {
     }
 
     const placeholders = categoryUids.map(() => '?').join(',');
-    return this.db
-      .prepare(
-        `
+    return parseRecipes(
+      this.db
+        .prepare(
+          `
       SELECT DISTINCT r.* FROM recipes r
       JOIN recipe_categories rc ON r.uid = rc.recipe_uid
       WHERE rc.category_uid IN (${placeholders}) AND r.in_trash = 0
       ORDER BY r.name COLLATE NOCASE
     `
-      )
-      .all(...categoryUids) as Recipe[];
+        )
+        .all(...categoryUids)
+    );
   }
 }

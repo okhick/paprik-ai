@@ -112,21 +112,21 @@ describe('RecipeRepository', () => {
       expect(result).toBe(true);
 
       const recipe = repository.getByUid('1');
-      expect(recipe?.in_trash).toBe(1);
+      expect(recipe?.in_trash).toBe(true);
     });
   });
 
   describe('toggleFavorite', () => {
     it('should toggle favorite status', () => {
-      repository.create({ uid: '1', name: 'Favorite Test', on_favorites: 0 });
+      repository.create({ uid: '1', name: 'Favorite Test', on_favorites: false });
 
       repository.toggleFavorite('1');
       let recipe = repository.getByUid('1');
-      expect(recipe?.on_favorites).toBe(1);
+      expect(recipe?.on_favorites).toBe(true);
 
       repository.toggleFavorite('1');
       recipe = repository.getByUid('1');
-      expect(recipe?.on_favorites).toBe(0);
+      expect(recipe?.on_favorites).toBe(false);
     });
   });
 
