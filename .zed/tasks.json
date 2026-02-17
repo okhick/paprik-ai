@@ -1,6 +1,6 @@
 [
   {
-    "label": "Build paprik",
+    "label": "Build paprik-ai",
     "command": "npm",
     "args": ["run", "build"],
     "cwd": "$ZED_WORKTREE_ROOT",
