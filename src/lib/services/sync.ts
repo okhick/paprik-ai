@@ -1,8 +1,8 @@
-import { RecipeApi } from './api/recipes.js';
-import { RecipeRepository } from './repositories/recipes.js';
-import { CategoryRepository } from './repositories/categories.js';
-import { Recipe } from '../types/recipe.js';
-import { PaprikaCategory, PaprikaRecipe } from './api/types.js';
+import { RecipeApi } from '../api/recipes.js';
+import { RecipeRepository } from '../repositories/recipes.js';
+import { CategoryRepository } from '../repositories/categories.js';
+import { Recipe } from '../../types/recipe.js';
+import { PaprikaCategory, PaprikaRecipe } from '../api/types.js';
 
 /**
  * Sync status

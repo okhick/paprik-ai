@@ -6,7 +6,7 @@ import { PaprikaClient } from '../lib/api/client.js';
 import { createRecipeApi } from '../lib/api/recipes.js';
 import { RecipeRepository } from '../lib/repositories/recipes.js';
 import { CategoryRepository } from '../lib/repositories/categories.js';
-import { SyncService, SyncStatus } from '../lib/sync.js';
+import { SyncService, SyncStatus } from '../lib/services/sync.js';
 import { getDatabase } from '../lib/db/index.js';
 import { getConfig, validateConfig } from '../lib/config.js';
 import { ErrorBox, LoadingBox, Layout } from '../components/ui.js';
