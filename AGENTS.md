@@ -80,7 +80,7 @@ src/
 ### Database (`src/lib/db/`)
 
 - Uses better-sqlite3 for synchronous, fast SQLite operations
-- Database location: `~/.paprik/recipes.db` (configurable via `DATABASE_PATH` env var)
+- Database location: `~/.paprik-ai/recipes.db` (configurable via `DATABASE_PATH` env var)
 - Schema mirrors Paprika's data structure
 - **Tables**: `recipes`, `categories`, `recipe_categories`, `sync_metadata`
 - **Zod Validators**: Runtime validation and type conversion for all database rows
@@ -189,7 +189,7 @@ export default class Tui extends Command {
 
   async run(): Promise<void> {
     if (!ensureDatabase()) {
-      this.log('Database not found. Run "paprik sync" first.');
+      this.log('Database not found. Run "paprik-ai sync" first.');
       return;
     }
 
@@ -208,7 +208,7 @@ Environment variables (loaded from `.env` file):
 | ------------------ | ------------------------ | -------- | ----------------------------------- |
 | `PAPRIKA_EMAIL`    | Paprika account email    | Yes      | -                                   |
 | `PAPRIKA_PASSWORD` | Paprika account password | Yes      | -                                   |
-| `DATABASE_PATH`    | Custom database location | No       | `~/.paprik/recipes.db`              |
+| `DATABASE_PATH`    | Custom database location | No       | `~/.paprik-ai/recipes.db`           |
 | `PAPRIKA_API_URL`  | Custom API endpoint      | No       | `https://www.paprikaapp.com/api/v1` |
 
 Configuration is loaded via `src/lib/config.ts` using Zod validation.
@@ -341,8 +341,8 @@ const recipes = recipeRepo.getAll(); // Returns Recipe[] (validated)
 
 ### Database Issues
 
-- Database is created in `~/.paprik/` on first sync
-- Delete `~/.paprik/` directory to reset database
+- Database is created in `~/.paprik-ai/` on first sync
+- Delete `~/.paprik-ai/` directory to reset database
 - Check `DATABASE_PATH` env var if using custom location
 
 ### API Authentication
@@ -407,7 +407,7 @@ When implementing AI features:
 - Keep AI logic separate from core recipe management
 - Use environment variable for Claude API key: `ANTHROPIC_API_KEY`
 - Consider caching AI responses in database
-- Add dedicated commands (e.g., `paprik suggest`, `paprik plan`)
+- Add dedicated commands (e.g., `paprik-ai suggest`, `paprik-ai plan`)
 
 ## Contact
 

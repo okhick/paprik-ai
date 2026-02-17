@@ -7,7 +7,7 @@
   "type": "module",
   "main": "./dist/index.js",
   "bin": {
-    "paprik": "./dist/index.js"
+    "paprik-ai": "./dist/index.js"
   },
   "scripts": {
     "build": "tsc",
@@ -24,8 +24,8 @@
     "prepublishOnly": "npm run build"
   },
   "oclif": {
-    "bin": "paprik",
-    "dirname": "paprik",
+    "bin": "paprik-ai",
+    "dirname": "paprik-ai",
     "commands": "./dist/commands",
     "topicSeparator": " "
   },
