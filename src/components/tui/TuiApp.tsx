@@ -5,8 +5,8 @@ import { Layout } from './Layout.js';
 import { RecipeListPane } from './RecipeListPane.js';
 import { RecipeDetailPane } from './RecipeDetailPane.js';
 import { CategoryFilterPane } from './CategoryFilterPane.js';
-import { RecipeRepository } from '../../lib/db/repositories/recipes.js';
-import { CategoryRepository } from '../../lib/db/repositories/categories.js';
+import { RecipeRepository } from '../../lib/repositories/recipes.js';
+import { CategoryRepository } from '../../lib/repositories/categories.js';
 
 /**
  * Simple loading screen component

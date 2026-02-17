@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { getDatabase } from './index.js';
-import { RecipeRepository } from './repositories/recipes.js';
+import { RecipeRepository } from '../repositories/recipes.js';
 
 /**
  * Checks if the database exists and has been initialized properly
