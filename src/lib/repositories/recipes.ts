@@ -1,7 +1,7 @@
 import type Database from 'better-sqlite3';
-import { getDatabase } from '../index.js';
-import type { Recipe } from '../../../types/recipe.js';
-import { parseRecipe, parseRecipes } from '../schema-validators.js';
+import { getDatabase } from '../db';
+import { Recipe } from '@/types/recipe';
+import { parseRecipes, parseRecipe } from '../db/schema-validators';
 
 /**
  * Recipe repository for database operations
