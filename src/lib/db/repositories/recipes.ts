@@ -1,6 +1,6 @@
 import type Database from 'better-sqlite3';
 import { getDatabase } from '../index.js';
-import type { Recipe } from '../../types/recipe.js';
+import type { Recipe } from '../../../types/recipe.js';
 import { parseRecipe, parseRecipes } from '../schema-validators.js';
 
 /**

@@ -1,7 +1,7 @@
 import { Command } from '@oclif/core';
 import { render } from 'ink';
 import React from 'react';
-import { ensureDatabase } from '../db/ensure-db.js';
+import { ensureDatabase } from '../lib/db/ensure-db.js';
 
 export default class Tui extends Command {
   static description = 'Launch the full-screen TUI for browsing recipes';

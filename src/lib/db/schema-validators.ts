@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { Recipe, Category } from '../types/recipe.js';
+import type { Recipe, Category } from '../../types/recipe.js';
 
 /**
  * SQLite stores booleans as 0/1 integers.

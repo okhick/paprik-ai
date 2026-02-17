@@ -2,14 +2,14 @@ import { Command } from '@oclif/core';
 import { render } from 'ink';
 import React, { useEffect, useState } from 'react';
 import { Box, Text } from 'ink';
-import { PaprikaClient } from '../api/client.js';
-import { createRecipeApi } from '../api/recipes.js';
-import { RecipeRepository } from '../db/repositories/recipes.js';
-import { CategoryRepository } from '../db/repositories/categories.js';
-import { SyncService, SyncStatus } from '../services/sync.js';
-import { getDatabase } from '../db/index.js';
-import { getConfig, validateConfig } from '../utils/config.js';
-import { ErrorBox, LoadingBox, Layout } from '../components/Layout.js';
+import { PaprikaClient } from '../lib/api/client.js';
+import { createRecipeApi } from '../lib/api/recipes.js';
+import { RecipeRepository } from '../lib/db/repositories/recipes.js';
+import { CategoryRepository } from '../lib/db/repositories/categories.js';
+import { SyncService, SyncStatus } from '../lib/sync.js';
+import { getDatabase } from '../lib/db/index.js';
+import { getConfig, validateConfig } from '../lib/config.js';
+import { ErrorBox, LoadingBox, Layout } from '../components/ui.js';
 
 /**
  * Sync recipes from Paprika API command

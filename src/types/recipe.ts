@@ -80,19 +80,3 @@ export interface SyncMetadata {
   value?: string;
   last_sync?: string;
 }
-
-/**
- * Parsed ingredient structure (from JSON)
- */
-export interface ParsedIngredient {
-  quantity?: string;
-  unit?: string;
-  name: string;
-}
-
-/**
- * Recipe with parsed ingredients
- */
-export interface RecipeWithParsedIngredients extends Omit<Recipe, 'ingredients'> {
-  ingredients?: ParsedIngredient[];
-}

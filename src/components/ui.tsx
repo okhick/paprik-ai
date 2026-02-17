@@ -60,14 +60,3 @@ export const LoadingBox: React.FC<{ message?: string }> = ({ message = 'Loading.
     </Box>
   );
 };
-
-/**
- * Empty state component
- */
-export const EmptyState: React.FC<{ message: string }> = ({ message }) => {
-  return (
-    <Box justifyContent="center" alignItems="center" padding={2}>
-      <Text dimColor>{message}</Text>
-    </Box>
-  );
-};
